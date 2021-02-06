@@ -12,6 +12,10 @@
 //
 // low power modes
 // https://github.com/stm32-rs/stm32f3xx-hal/issues/108
+//
+// static usb example in
+// https://github.com/stm32-rs/stm32-usbd-examples/blob/master/example-stm32f103c8/examples/serial_interrupt.rs
+// need to cleanup the log impl
 
 use panic_abort as _;
 use stm32f3xx_hal as hal;
@@ -23,11 +27,12 @@ use hal::{
     prelude::*,
     usb::{Peripheral, UsbBus},
 };
-use log::warn;
+use log::{info, warn};
 use night_light_lib::*;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 
+static LOGGER: Logger<SerialPortLogger<UsbBus<Peripheral>, &mut [u8], &mut [u8]>> = Logger::new();
 static SYS_CLOCK: SystemClock = SystemClock::new();
 
 #[entry]
@@ -46,6 +51,7 @@ fn main() -> ! {
         .pclk1(24.mhz())
         .pclk2(24.mhz())
         .freeze(&mut flash.acr);
+    assert!(clocks.usbclk_valid());
 
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
     let mut gpioc = dp.GPIOC.split(&mut rcc.ahb);
@@ -77,42 +83,53 @@ fn main() -> ! {
     };
 
     let usb_rx_mem = unsafe {
-        static mut USB_RX_MEM: [u8; DEFAULT_RX_BUFFER_CAPACITY] = [0; DEFAULT_RX_BUFFER_CAPACITY];
+        static mut USB_RX_MEM: [u8; DEFAULT_USB_RX_BUFFER_CAPACITY] =
+            [0; DEFAULT_USB_RX_BUFFER_CAPACITY];
         &mut USB_RX_MEM[..]
     };
     let usb_tx_mem = unsafe {
-        static mut USB_TX_MEM: [u8; DEFAULT_TX_BUFFER_CAPACITY] = [0; DEFAULT_TX_BUFFER_CAPACITY];
+        static mut USB_TX_MEM: [u8; DEFAULT_USB_TX_BUFFER_CAPACITY] =
+            [0; DEFAULT_USB_TX_BUFFER_CAPACITY];
         &mut USB_TX_MEM[..]
     };
 
     let usb_bus = UsbBus::new(usb);
-    let usb_serial_port = SerialPort::new_with_store(&usb_bus, usb_rx_mem, usb_tx_mem);
-    let usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(0x16c0, 0x27dd))
+    // HACK: make the borrow have a static lifetime
+    let usb_bus_borrow: &'static usb_device::bus::UsbBusAllocator<UsbBus<Peripheral>> =
+        unsafe { core::mem::transmute::<_, _>(&usb_bus) };
+    let usb_serial_port = SerialPort::new_with_store(&usb_bus_borrow, usb_rx_mem, usb_tx_mem);
+    let mut usb_dev = UsbDeviceBuilder::new(&usb_bus_borrow, UsbVidPid(0x16c0, 0x27dd))
         .manufacturer("StuffByJon")
-        .product("Night Light")
+        .product("Night Light Debug Logger")
         .serial_number("0001")
         .device_class(USB_CLASS_CDC)
         .build();
 
-    let mut usb = UsbTransport::new(usb_dev, usb_serial_port);
+    unsafe {
+        LOGGER.set_inner(SerialPortLogger::from(usb_serial_port));
+        log::set_logger(&LOGGER).unwrap();
+    }
+    log::set_max_level(log::LevelFilter::Trace);
 
     // System clock tracking millis, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
+    info!("Night light initialized");
+
     // TODO -setup fast/slow LED blink timer(s)
 
     loop {
-        // TODO - timer for this
-        usb.poll();
+        if let Some(port) = LOGGER.inner_mut() {
+            port.poll(&mut usb_dev);
+        }
 
-        if usb.state() == UsbDeviceState::Configured {
+        // it works
+        if usb_dev.state() == UsbDeviceState::Configured {
             let now = SYS_CLOCK.now();
             if now.as_millis() % 1000 == 0 {
-                let bytes = now.as_millis().to_le_bytes();
-                if let Err(e) = usb.write(&bytes) {
-                    pin_led.toggle().ok();
-                    warn!("Failed to write {:?}", e);
-                }
+                while SYS_CLOCK.now().as_millis() % 1000 == 0 {}
+                pin_led.toggle().ok();
+                info!("message {}", now);
             }
         }
     }

@@ -1,5 +1,6 @@
 // TODO - use https://crates.io/crates/embedded-time
 
+use core::fmt;
 use core::sync::atomic::{AtomicU32, Ordering::SeqCst};
 use hal::rcc::Clocks;
 use hal::stm32::SYST;
@@ -23,6 +24,12 @@ impl Instant {
 impl From<Instant> for u32 {
     fn from(i: Instant) -> Self {
         i.0
+    }
+}
+
+impl fmt::Display for Instant {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
