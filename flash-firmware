@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -e
+
+cargo build --release
+
+openocd -f openocd.cfg -c "program target/thumbv7em-none-eabihf/release/night-light verify reset exit"
+
+exit 0

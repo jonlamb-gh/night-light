@@ -1,0 +1,30 @@
+[package]
+name = "night-light"
+version = "0.1.0"
+authors = ["Jon Lamb"]
+edition = "2018"
+
+[[bin]]
+name = "night-light"
+path = "src/main.rs"
+
+[lib]
+name = "night_light_lib"
+path = "src/lib.rs"
+
+[dependencies]
+cortex-m = "0.6"
+cortex-m-rt = "0.6"
+nb = "0.1"
+panic-abort = "0.3"
+usb-device = "0.2"
+usbd-serial = "0.1"
+
+[dependencies.stm32f3xx-hal]
+version = "0.6"
+default-features = false
+features = ["rt", "unproven", "stm32f303xc"]
+
+[dependencies.log]
+version = "0.4"
+default-features = false
