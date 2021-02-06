@@ -13,6 +13,12 @@
 // low power modes
 // https://github.com/stm32-rs/stm32f3xx-hal/issues/108
 //
+// persistent configs in flash
+// https://docs.rs/eeprom/0.1.0/eeprom/
+//
+// ir receiver
+// https://docs.rs/infrared/0.10.0/infrared/
+//
 // static usb example in
 // https://github.com/stm32-rs/stm32-usbd-examples/blob/master/example-stm32f103c8/examples/serial_interrupt.rs
 // need to cleanup the log impl
@@ -111,12 +117,18 @@ fn main() -> ! {
     }
     log::set_max_level(log::LevelFilter::Trace);
 
+    // TODO - use a timer, do an initial poll loop until Configured or timeout
+    for _ in 0..5000 {
+        if let Some(port) = LOGGER.inner_mut() {
+            port.poll(&mut usb_dev);
+        }
+        asm::delay(clocks.sysclk().0 / 5000);
+    }
+
     // System clock tracking millis, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
     info!("Night light initialized");
-
-    // TODO -setup fast/slow LED blink timer(s)
 
     loop {
         if let Some(port) = LOGGER.inner_mut() {

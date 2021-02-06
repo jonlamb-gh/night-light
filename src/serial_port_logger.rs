@@ -11,7 +11,7 @@ use usb_device::bus::UsbBus;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, UsbError};
 
-pub const DEFAULT_USB_RX_BUFFER_CAPACITY: usize = 64;
+pub const DEFAULT_USB_RX_BUFFER_CAPACITY: usize = 32;
 pub const DEFAULT_USB_TX_BUFFER_CAPACITY: usize = 128;
 
 pub struct Logger<T> {
