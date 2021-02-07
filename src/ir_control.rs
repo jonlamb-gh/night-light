@@ -59,6 +59,11 @@ pub enum Button {
     Green,
     Red,
     Blue,
+    White,
+    Flash,
+    Smooth,
+    Strobe,
+    Fade,
     Unknown(u8),
 }
 
@@ -79,6 +84,11 @@ impl From<Nec16Command> for Button {
             8 => Green,
             9 => Red,
             10 => Blue,
+            11 => White,
+            15 => Flash,
+            19 => Smooth,
+            23 => Strobe,
+            27 => Fade,
             _ => Unknown(c.cmd),
         }
     }

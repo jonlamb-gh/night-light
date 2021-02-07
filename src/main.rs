@@ -11,6 +11,7 @@
 // https://github.com/smart-leds-rs/smart-leds-samples/blob/master/stm32f1-examples/examples/stm32f1_ws2812_spi_blink.rs
 //
 // low power modes
+// timer to enter low power / sleep mode, reset system clock on wakeup
 // https://github.com/stm32-rs/stm32f3xx-hal/issues/108
 //
 // persistent configs in flash
@@ -180,6 +181,8 @@ fn main() -> ! {
             }
         }
         */
+
+        //cortex_m::asm::wfe();
     }
 }
 
