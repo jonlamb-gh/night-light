@@ -35,10 +35,13 @@ impl<T> Logger<T> {
         }
     }
 
+    /// # Safety
+    /// TODO
     pub unsafe fn set_inner(&self, inner: T) {
         let _ = (*self.inner.get()).stdout.replace(inner);
     }
 
+    #[allow(clippy::mut_from_ref)]
     pub fn inner_mut(&self) -> &mut Option<T> {
         &mut unsafe { &mut *self.inner.get() }.stdout
     }

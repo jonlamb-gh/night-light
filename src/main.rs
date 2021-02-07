@@ -16,15 +16,11 @@
 // persistent configs in flash
 // https://docs.rs/eeprom/0.1.0/eeprom/
 //
-// ir receiver
-// https://docs.rs/infrared/0.10.0/infrared/
-//
 // static usb example in
 // https://github.com/stm32-rs/stm32-usbd-examples/blob/master/example-stm32f103c8/examples/serial_interrupt.rs
 // need to cleanup the log impl
 
 use panic_abort as _;
-use stm32f3xx_hal as hal;
 
 use cortex_m::asm;
 use cortex_m_rt::{entry, exception, ExceptionFrame};
@@ -35,11 +31,7 @@ use hal::{
     timer::{self, Timer},
     usb::{Peripheral, UsbBus},
 };
-use heapless::{consts::U8, spsc};
-use infrared::{
-    protocols::nec::{Nec16, Nec16Command},
-    PeriodicReceiver,
-};
+use infrared::PeriodicReceiver;
 use log::info;
 use night_light_lib::*;
 use usb_device::prelude::*;
@@ -48,13 +40,10 @@ use usbd_serial::{SerialPort, USB_CLASS_CDC};
 static LOGGER: Logger<SerialPortLogger<UsbBus<Peripheral>, &mut [u8], &mut [u8]>> = Logger::new();
 static SYS_CLOCK: SystemClock = SystemClock::new();
 
-// stuff for testing the IR receiver
-type RecvPin = PB9<Input<Floating>>;
-const SAMPLERATE: u32 = 20_000;
-static mut TIMER: Option<Timer<pac::TIM2>> = None;
-static mut RECEIVER: Option<PeriodicReceiver<Nec16, RecvPin>> = None;
-static mut IR_QUEUE: spsc::Queue<Nec16Command, U8, u8, spsc::SingleCore> =
-    spsc::Queue(unsafe { heapless::i::Queue::u8_sc() });
+type IrRecvrPin = PB9<Input<Floating>>;
+static mut IR_TIMER: Option<Timer<pac::TIM2>> = None;
+static mut IR_RECVR: Option<IrReceiver<IrRecvrPin>> = None;
+static mut IR_CMD_QUEUE: IrCommandQueue = IrCommandQueue::new();
 
 #[entry]
 fn main() -> ! {
@@ -88,14 +77,14 @@ fn main() -> ! {
         .pb9
         .into_floating_input(&mut gpiob.moder, &mut gpiob.pupdr);
 
-    let mut ir_timer = Timer::tim2(dp.TIM2, SAMPLERATE.hz(), clocks, &mut rcc.apb1);
+    let mut ir_timer = Timer::tim2(dp.TIM2, IR_SAMPLE_RATE, clocks, &mut rcc.apb1);
     ir_timer.listen(timer::Event::Update);
 
-    let ir_recvr = PeriodicReceiver::new(ir_pin, SAMPLERATE);
+    let ir_recvr = PeriodicReceiver::new(ir_pin, IR_SAMPLE_RATE.0);
 
     unsafe {
-        TIMER.replace(ir_timer);
-        RECEIVER.replace(ir_recvr);
+        IR_TIMER.replace(ir_timer);
+        IR_RECVR.replace(ir_recvr);
     }
 
     pac::NVIC::unpend(interrupt::TIM2);
@@ -170,15 +159,14 @@ fn main() -> ! {
             port.poll(&mut usb_dev);
         }
 
-        if let Some(cmd) = unsafe { IR_QUEUE.dequeue() } {
+        if let Some(cmd) = unsafe { IR_CMD_QUEUE.dequeue() } {
             led.toggle().ok();
-            info!("{:?}", cmd);
+            info!("{}", cmd);
         }
 
         /*
         if SYS_CLOCK.now().as_millis() > last_t.as_millis().wrapping_add(1000) {
             last_t = SYS_CLOCK.now();
-            info!("sdf");
         }
         */
 
@@ -202,12 +190,12 @@ fn SysTick() {
 
 #[interrupt]
 fn TIM2() {
-    let timer = unsafe { TIMER.as_mut().unwrap() };
+    let timer = unsafe { IR_TIMER.as_mut().unwrap() };
     timer.clear_update_interrupt_flag();
 
-    let receiver = unsafe { RECEIVER.as_mut().unwrap() };
-    if let Ok(Some(cmd)) = receiver.poll() {
-        let _ = unsafe { IR_QUEUE.enqueue(cmd).ok() };
+    let recvr = unsafe { IR_RECVR.as_mut().unwrap() };
+    if let Ok(Some(cmd)) = recvr.poll() {
+        let _ = unsafe { IR_CMD_QUEUE.enqueue(cmd.into()).ok() };
     }
 }
 
