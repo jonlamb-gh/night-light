@@ -1,5 +1,11 @@
 # night-light
 
+## IR Receiver
+
+Protocol: NEC variant with 16 bit address and Nec standard timing
+
+TODO - add button map for the buttons
+
 ## Build the Firmware
 
 ```bash

@@ -14,6 +14,10 @@ use usbd_serial::{SerialPort, UsbError};
 pub const DEFAULT_USB_RX_BUFFER_CAPACITY: usize = 32;
 pub const DEFAULT_USB_TX_BUFFER_CAPACITY: usize = 128;
 
+// TODO
+// integrate the USB device,
+// filter/enabled based on state == UsbDeviceState::Configured
+
 pub struct Logger<T> {
     inner: UnsafeCell<Innards<T>>,
 }

@@ -29,17 +29,32 @@ use stm32f3xx_hal as hal;
 use cortex_m::asm;
 use cortex_m_rt::{entry, exception, ExceptionFrame};
 use hal::{
-    pac,
+    gpio::{gpiob::PB9, Floating, Input},
+    interrupt, pac,
     prelude::*,
+    timer::{self, Timer},
     usb::{Peripheral, UsbBus},
 };
-use log::{info, warn};
+use heapless::{consts::U8, spsc};
+use infrared::{
+    protocols::nec::{Nec16, Nec16Command},
+    PeriodicReceiver,
+};
+use log::info;
 use night_light_lib::*;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 
 static LOGGER: Logger<SerialPortLogger<UsbBus<Peripheral>, &mut [u8], &mut [u8]>> = Logger::new();
 static SYS_CLOCK: SystemClock = SystemClock::new();
+
+// stuff for testing the IR receiver
+type RecvPin = PB9<Input<Floating>>;
+const SAMPLERATE: u32 = 20_000;
+static mut TIMER: Option<Timer<pac::TIM2>> = None;
+static mut RECEIVER: Option<PeriodicReceiver<Nec16, RecvPin>> = None;
+static mut IR_QUEUE: spsc::Queue<Nec16Command, U8, u8, spsc::SingleCore> =
+    spsc::Queue(unsafe { heapless::i::Queue::u8_sc() });
 
 #[entry]
 fn main() -> ! {
@@ -60,19 +75,39 @@ fn main() -> ! {
     assert!(clocks.usbclk_valid());
 
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
+    let mut gpiob = dp.GPIOB.split(&mut rcc.ahb);
     let mut gpioc = dp.GPIOC.split(&mut rcc.ahb);
-    let mut pin_led = gpioc
+
+    let mut led = gpioc
         .pc13
         .into_push_pull_output(&mut gpioc.moder, &mut gpioc.otyper);
-
     // LED on, active low
-    pin_led.set_low().ok();
+    led.set_low().ok();
+
+    let ir_pin = gpiob
+        .pb9
+        .into_floating_input(&mut gpiob.moder, &mut gpiob.pupdr);
+
+    let mut ir_timer = Timer::tim2(dp.TIM2, SAMPLERATE.hz(), clocks, &mut rcc.apb1);
+    ir_timer.listen(timer::Event::Update);
+
+    let ir_recvr = PeriodicReceiver::new(ir_pin, SAMPLERATE);
+
+    unsafe {
+        TIMER.replace(ir_timer);
+        RECEIVER.replace(ir_recvr);
+    }
+
+    pac::NVIC::unpend(interrupt::TIM2);
+    unsafe {
+        pac::NVIC::unmask(interrupt::TIM2);
+    };
 
     // Setup the USB serial transport
     // D+ line (PA12) has a pull-up resister.
     // Pull the D+ pin down to send a RESET condition to the USB bus.
-    // This forced reset is needed only for development, without it host
-    // will not reset your device when you upload new firmware.
+    // This forced reset is needed only for development, without it the host
+    // will not reset the device on a new firmwar upload.
     let mut usb_dp = gpioa
         .pa12
         .into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
@@ -135,7 +170,19 @@ fn main() -> ! {
             port.poll(&mut usb_dev);
         }
 
-        // it works
+        if let Some(cmd) = unsafe { IR_QUEUE.dequeue() } {
+            led.toggle().ok();
+            info!("{:?}", cmd);
+        }
+
+        /*
+        if SYS_CLOCK.now().as_millis() > last_t.as_millis().wrapping_add(1000) {
+            last_t = SYS_CLOCK.now();
+            info!("sdf");
+        }
+        */
+
+        /*
         if usb_dev.state() == UsbDeviceState::Configured {
             let now = SYS_CLOCK.now();
             if now.as_millis() % 1000 == 0 {
@@ -144,12 +191,24 @@ fn main() -> ! {
                 info!("message {}", now);
             }
         }
+        */
     }
 }
 
 #[exception]
 fn SysTick() {
     SYS_CLOCK.inc_from_interrupt();
+}
+
+#[interrupt]
+fn TIM2() {
+    let timer = unsafe { TIMER.as_mut().unwrap() };
+    timer.clear_update_interrupt_flag();
+
+    let receiver = unsafe { RECEIVER.as_mut().unwrap() };
+    if let Ok(Some(cmd)) = receiver.poll() {
+        let _ = unsafe { IR_QUEUE.enqueue(cmd).ok() };
+    }
 }
 
 #[exception]
