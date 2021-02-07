@@ -5,9 +5,11 @@
 // links
 // https://github.com/stm32-rs/stm32f3xx-hal/tree/master/examples
 //
-// https://crates.io/crates/smart-leds
 // WS2812 leds
+// https://crates.io/crates/smart-leds
 // https://github.com/smart-leds-rs/ws2812-spi-rs
+// https://docs.rs/smart-leds/0.3.0/smart_leds/
+// https://docs.rs/ws2812-spi/0.4.0/ws2812_spi/index.html
 // https://github.com/smart-leds-rs/smart-leds-samples/blob/master/stm32f1-examples/examples/stm32f1_ws2812_spi_blink.rs
 //
 // low power modes
@@ -181,8 +183,6 @@ fn main() -> ! {
             }
         }
         */
-
-        //cortex_m::asm::wfe();
     }
 }
 

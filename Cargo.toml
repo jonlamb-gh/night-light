@@ -20,8 +20,10 @@ panic-abort = "0.3"
 embedded-hal = "0.2"
 usb-device = "0.2"
 usbd-serial = "0.1"
-infrared = "0.10"
 heapless = "0.6"
+infrared = "0.10"
+smart-leds = "0.3"
+ws2812-spi = "0.4"
 
 [dependencies.stm32f3xx-hal]
 version = "0.6"
