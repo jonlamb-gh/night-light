@@ -30,6 +30,10 @@ version = "0.6"
 default-features = false
 features = ["rt", "unproven", "stm32f303xc"]
 
+[dependencies.err-derive]
+version = "0.3"
+default-features = false
+
 [dependencies.log]
 version = "0.4"
 default-features = false

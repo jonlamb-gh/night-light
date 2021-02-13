@@ -1,11 +1,17 @@
-use core::fmt;
 use embedded_hal::spi::FullDuplex;
-use smart_leds::{hsv::White, SmartLedsWrite, RGB8, RGBW};
+use err_derive::Error;
+use smart_leds::SmartLedsWrite;
 use ws2812_spi::{devices::Sk6812w, Ws2812};
 
-pub use smart_leds::colors;
+pub use smart_leds::{colors, hsv::White, RGBW};
 
 pub const NUM_LEDS: usize = 12;
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Error)]
+pub enum Error {
+    #[error(display = "Hw SPI error")]
+    HwSpi,
+}
 
 pub struct LedController<SPI> {
     driver: Ws2812<SPI, Sk6812w>,
@@ -16,7 +22,6 @@ pub struct LedController<SPI> {
 impl<SPI, E> LedController<SPI>
 where
     SPI: FullDuplex<u8, Error = E>,
-    E: fmt::Debug,
 {
     pub fn new(driver: Ws2812<SPI, Sk6812w>) -> Self {
         LedController {
@@ -38,24 +43,27 @@ where
         self.brightness = self.brightness.saturating_sub(1);
     }
 
-    pub fn set_all(&mut self, color: RGB8, white: u8) -> Result<(), E> {
+    pub fn set_all(&mut self, color: RGBW<u8>) {
         for p in self.pixels.iter_mut() {
             p.r = color.r;
             p.g = color.g;
             p.b = color.b;
-            p.a = White(white);
+            p.a = color.a;
         }
-
-        self.write_leds()
     }
 
-    fn write_leds(&mut self) -> Result<(), E> {
+    pub fn set_all_off(&mut self) {
+        self.set_all(RGBW::new_alpha(0, 0, 0, White(0)));
+    }
+
+    pub fn update_leds(&mut self) -> Result<(), Error> {
         let pixels_iter = self.pixels.iter().cloned();
         if self.brightness != core::u8::MAX {
             self.driver
                 .write(brightness_iter(pixels_iter, self.brightness))
+                .map_err(|_| Error::HwSpi)
         } else {
-            self.driver.write(pixels_iter)
+            self.driver.write(pixels_iter).map_err(|_| Error::HwSpi)
         }
     }
 }

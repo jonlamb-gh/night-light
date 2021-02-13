@@ -59,11 +59,8 @@ openocd -f openocd.cfg -c "program /path/to/binary verify reset"
 
 ### Debug/stdout
 
-The debug serial port is connected to USART1, PB6 Tx, PB7 Rx.
-
 ```bash
-stty -F /dev/ttyUSB0 115200
-cat /dev/ttyUSB0
+openocd -f openocd.cfg
 ```
 
 ```bash
@@ -86,3 +83,7 @@ cargo run
   - Schematic: [link](https://robotdyn.com/pub/media/GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem/DOCS/Schematic==GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem.pdf)
 * TODO
 
+## Links
+
+* [stm32f3xx-hal docs](https://docs.rs/stm32f3xx-hal/0.6.1/stm32f3xx_hal/)
+* [embedded-hal docs](https://docs.rs/embedded-hal/0.2.4/embedded_hal/)

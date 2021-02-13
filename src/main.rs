@@ -31,14 +31,17 @@ use hal::{
     gpio::{gpiob::PB9, Floating, Input},
     interrupt, pac,
     prelude::*,
+    spi::Spi,
     timer::{self, Timer},
     usb::{Peripheral, UsbBus},
+    watchdog::IndependentWatchDog,
 };
 use infrared::PeriodicReceiver;
-use log::info;
+use log::{error, info};
 use night_light_lib::*;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
+use ws2812_spi::Ws2812;
 
 static LOGGER: Logger<SerialPortLogger<UsbBus<Peripheral>, &mut [u8], &mut [u8]>> = Logger::new();
 static SYS_CLOCK: SystemClock = SystemClock::new();
@@ -53,6 +56,10 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().expect("Failed to take pac::Peripherals");
     let cp =
         cortex_m::peripheral::Peripherals::take().expect("Failed to take cortex_m::Peripherals");
+
+    let mut iwdg = IndependentWatchDog::new(dp.IWDG);
+    iwdg.stop_on_debug(&dp.DBGMCU, true);
+    iwdg.start(100.ms());
 
     // Setup system clock
     let mut flash = dp.FLASH.constrain();
@@ -75,6 +82,28 @@ fn main() -> ! {
         .into_push_pull_output(&mut gpioc.moder, &mut gpioc.otyper);
     // LED on, active low
     led.set_low().ok();
+
+    let spi_pins = {
+        let sck = gpiob.pb3.into_af5(&mut gpiob.moder, &mut gpiob.afrl);
+        let miso = gpiob.pb4.into_af5(&mut gpiob.moder, &mut gpiob.afrl);
+        let mosi = gpiob.pb5.into_af5(&mut gpiob.moder, &mut gpiob.afrl);
+        (sck, miso, mosi)
+    };
+
+    let spi = Spi::spi1(
+        dp.SPI1,
+        spi_pins,
+        ws2812_spi::MODE,
+        3.mhz(),
+        clocks,
+        &mut rcc.apb2,
+    );
+
+    let timer = Timer::tim3(dp.TIM3, TIMER_FREQ, clocks, &mut rcc.apb1);
+    let led_driver = Ws2812::new_sk6812w(spi);
+    let led_controller = LedController::new(led_driver);
+    let mut controller = Controller::new(led_controller, timer);
+    controller.initialize().ok();
 
     let ir_pin = gpiob
         .pb9
@@ -146,6 +175,7 @@ fn main() -> ! {
 
     // TODO - use a timer, do an initial poll loop until Configured or timeout
     for _ in 0..5000 {
+        iwdg.feed();
         if let Some(port) = LOGGER.inner_mut() {
             port.poll(&mut usb_dev);
         }
@@ -155,9 +185,16 @@ fn main() -> ! {
     // System clock tracking millis, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
+    controller
+        .initialize()
+        .map_err(|e| error!("Failed to initialize controller {}", e))
+        .unwrap();
+
     info!("Night light initialized");
 
     loop {
+        iwdg.feed();
+
         if let Some(port) = LOGGER.inner_mut() {
             port.poll(&mut usb_dev);
         }
