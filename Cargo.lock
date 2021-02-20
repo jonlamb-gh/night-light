@@ -248,6 +248,7 @@ dependencies = [
  "nb 0.1.3",
  "panic-abort",
  "smart-leds",
+ "smlang",
  "stm32f3xx-hal",
  "usb-device",
  "usbd-serial",
@@ -397,6 +398,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebf6d833fa93f16a1c1874e62c2aebe8567e5bdd436d59bf543ed258b6f7a8e3"
 dependencies = [
  "rgb",
+]
+
+[[package]]
+name = "smlang"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "570a62532c62c1319abf81875a59e7a4e8bcde64078228675f33e0a20711d105"
+dependencies = [
+ "smlang-macros",
+]
+
+[[package]]
+name = "smlang-macros"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bbae25a90add413c53f111eb04b00951d8f1edb46d9d949579e2e3d2bf817a1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

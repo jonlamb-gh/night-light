@@ -34,6 +34,10 @@ features = ["rt", "unproven", "stm32f303xc"]
 version = "0.3"
 default-features = false
 
+[dependencies.smlang]
+version = "0.3"
+features = ["graphviz"]
+
 [dependencies.log]
 version = "0.4"
 default-features = false

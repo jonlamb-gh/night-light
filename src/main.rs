@@ -37,7 +37,7 @@ use hal::{
     watchdog::IndependentWatchDog,
 };
 use infrared::PeriodicReceiver;
-use log::{error, info};
+use log::{info, warn};
 use night_light_lib::*;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
@@ -57,10 +57,6 @@ fn main() -> ! {
     let cp =
         cortex_m::peripheral::Peripherals::take().expect("Failed to take cortex_m::Peripherals");
 
-    let mut iwdg = IndependentWatchDog::new(dp.IWDG);
-    iwdg.stop_on_debug(&dp.DBGMCU, true);
-    iwdg.start(100.ms());
-
     // Setup system clock
     let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
@@ -72,6 +68,10 @@ fn main() -> ! {
         .pclk2(24.mhz())
         .freeze(&mut flash.acr);
     assert!(clocks.usbclk_valid());
+
+    let mut iwdg = IndependentWatchDog::new(dp.IWDG);
+    iwdg.stop_on_debug(&dp.DBGMCU, false);
+    iwdg.start(500.ms());
 
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
     let mut gpiob = dp.GPIOB.split(&mut rcc.ahb);
@@ -99,11 +99,10 @@ fn main() -> ! {
         &mut rcc.apb2,
     );
 
-    let timer = Timer::tim3(dp.TIM3, TIMER_FREQ, clocks, &mut rcc.apb1);
     let led_driver = Ws2812::new_sk6812w(spi);
-    let led_controller = LedController::new(led_driver);
-    let mut controller = Controller::new(led_controller, timer);
-    controller.initialize().ok();
+    let mut led_controller = LedController::new(led_driver);
+    led_controller.set_all_off();
+    led_controller.update_leds().ok();
 
     let ir_pin = gpiob
         .pb9
@@ -166,6 +165,7 @@ fn main() -> ! {
         .serial_number("0001")
         .device_class(USB_CLASS_CDC)
         .build();
+    let mut usb_timer = Timer::tim3(dp.TIM3, 100.hz(), clocks, &mut rcc.apb1);
 
     unsafe {
         LOGGER.set_inner(SerialPortLogger::from(usb_serial_port));
@@ -173,7 +173,6 @@ fn main() -> ! {
     }
     log::set_max_level(log::LevelFilter::Trace);
 
-    // TODO - use a timer, do an initial poll loop until Configured or timeout
     for _ in 0..5000 {
         iwdg.feed();
         if let Some(port) = LOGGER.inner_mut() {
@@ -185,41 +184,36 @@ fn main() -> ! {
     // System clock tracking millis, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
-    controller
-        .initialize()
-        .map_err(|e| error!("Failed to initialize controller {}", e))
-        .unwrap();
+    let mut controller = Controller::new(led_controller, &SYS_CLOCK);
+    let mut controller_update_timer = Timer::tim4(dp.TIM4, 200.hz(), clocks, &mut rcc.apb1);
 
     info!("Night light initialized");
 
     loop {
         iwdg.feed();
 
-        if let Some(port) = LOGGER.inner_mut() {
-            port.poll(&mut usb_dev);
+        if usb_timer.wait().is_ok() {
+            if let Some(port) = LOGGER.inner_mut() {
+                port.poll(&mut usb_dev);
+            }
         }
 
         if let Some(cmd) = unsafe { IR_CMD_QUEUE.dequeue() } {
-            led.toggle().ok();
-            info!("{}", cmd);
+            controller.handle_ir_command(cmd);
         }
 
-        /*
-        if SYS_CLOCK.now().as_millis() > last_t.as_millis().wrapping_add(1000) {
-            last_t = SYS_CLOCK.now();
+        if controller_update_timer.wait().is_ok() {
+            controller.update();
         }
-        */
 
-        /*
-        if usb_dev.state() == UsbDeviceState::Configured {
-            let now = SYS_CLOCK.now();
-            if now.as_millis() % 1000 == 0 {
-                while SYS_CLOCK.now().as_millis() % 1000 == 0 {}
-                pin_led.toggle().ok();
-                info!("message {}", now);
+        if SYS_CLOCK.is_near_wrap_around() {
+            warn!("System clock is near the wrap around, resetting");
+            loop {
+                if let Some(port) = LOGGER.inner_mut() {
+                    port.poll(&mut usb_dev);
+                }
             }
         }
-        */
     }
 }
 
@@ -230,6 +224,7 @@ fn SysTick() {
 
 #[interrupt]
 fn TIM2() {
+    // Unsafe ok, timer and recvr only used in this handler
     let timer = unsafe { IR_TIMER.as_mut().unwrap() };
     timer.clear_update_interrupt_flag();
 

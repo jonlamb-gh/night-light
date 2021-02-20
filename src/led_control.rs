@@ -4,6 +4,7 @@ use smart_leds::SmartLedsWrite;
 use ws2812_spi::{devices::Sk6812w, Ws2812};
 
 pub use smart_leds::{colors, hsv::White, RGBW};
+pub type RGBW8 = RGBW<u8>;
 
 pub const NUM_LEDS: usize = 12;
 

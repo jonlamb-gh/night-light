@@ -12,12 +12,21 @@ use log::debug;
 pub struct Instant(u32);
 
 impl Instant {
+    pub const ONE_SECOND: Self = Instant(1000);
+    pub const ONE_MINUTE: Self = Instant(1000 * 60);
+    pub const TEN_MINUTES: Self = Instant(1000 * 60 * 10);
+    pub const ONE_HOUR: Self = Instant(1000 * 60 * 60);
+
     pub fn from_millis(ms: u32) -> Self {
         Instant(ms)
     }
 
     pub fn as_millis(self) -> u32 {
         self.0
+    }
+
+    pub fn saturation_sub(self, rhs: Self) -> Self {
+        Instant(self.0.saturating_sub(rhs.0))
     }
 }
 
@@ -41,6 +50,8 @@ unsafe impl Send for SystemClock {}
 unsafe impl Sync for SystemClock {}
 
 impl SystemClock {
+    pub const NEAR_WRAP_AROUND_VALUE: Instant = Instant(core::u32::MAX - Instant::TEN_MINUTES.0);
+
     pub const fn new() -> Self {
         SystemClock(AtomicU32::new(0))
     }
@@ -60,6 +71,10 @@ impl SystemClock {
 
     pub fn inc_from_interrupt(&self) {
         self.0.fetch_add(1, SeqCst);
+    }
+
+    pub fn is_near_wrap_around(&self) -> bool {
+        self.now().as_millis() >= Self::NEAR_WRAP_AROUND_VALUE.as_millis()
     }
 
     pub fn now(&self) -> Instant {

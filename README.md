@@ -1,5 +1,8 @@
 # night-light
 
+The controller runs a little state machine, generated vi [smlang](https://crates.io/crates/smlang).
+![statemachine.svg](statemachine.svg)
+
 ## IR Receiver
 
 Protocol: NEC variant with 16 bit address and Nec standard timing
