@@ -2,9 +2,6 @@
 #![no_main]
 // TODO - lints
 
-// links
-// https://github.com/stm32-rs/stm32f3xx-hal/tree/master/examples
-//
 // WS2812 leds
 // https://crates.io/crates/smart-leds
 // https://github.com/smart-leds-rs/ws2812-spi-rs
@@ -15,13 +12,6 @@
 // low power modes
 // timer to enter low power / sleep mode, reset system clock on wakeup
 // https://github.com/stm32-rs/stm32f3xx-hal/issues/108
-//
-// persistent configs in flash
-// https://docs.rs/eeprom/0.1.0/eeprom/
-//
-// static usb example in
-// https://github.com/stm32-rs/stm32-usbd-examples/blob/master/example-stm32f103c8/examples/serial_interrupt.rs
-// need to cleanup the log impl
 
 use panic_abort as _;
 
@@ -33,17 +23,13 @@ use hal::{
     prelude::*,
     spi::Spi,
     timer::{self, Timer},
-    usb::{Peripheral, UsbBus},
     watchdog::IndependentWatchDog,
 };
 use infrared::PeriodicReceiver;
 use log::{info, warn};
 use night_light_lib::*;
-use usb_device::prelude::*;
-use usbd_serial::{SerialPort, USB_CLASS_CDC};
 use ws2812_spi::Ws2812;
 
-static LOGGER: Logger<SerialPortLogger<UsbBus<Peripheral>, &mut [u8], &mut [u8]>> = Logger::new();
 static SYS_CLOCK: SystemClock = SystemClock::new();
 
 type IrRecvrPin = PB9<Input<Floating>>;
@@ -73,7 +59,6 @@ fn main() -> ! {
     iwdg.stop_on_debug(&dp.DBGMCU, false);
     iwdg.start(500.ms());
 
-    let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
     let mut gpiob = dp.GPIOB.split(&mut rcc.ahb);
     let mut gpioc = dp.GPIOC.split(&mut rcc.ahb);
 
@@ -123,64 +108,6 @@ fn main() -> ! {
         pac::NVIC::unmask(interrupt::TIM2);
     };
 
-    // Setup the USB serial transport
-    // D+ line (PA12) has a pull-up resister.
-    // Pull the D+ pin down to send a RESET condition to the USB bus.
-    // This forced reset is needed only for development, without it the host
-    // will not reset the device on a new firmwar upload.
-    let mut usb_dp = gpioa
-        .pa12
-        .into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
-    usb_dp.set_low().unwrap();
-    asm::delay(clocks.sysclk().0 / 200);
-
-    let usb_dm = gpioa.pa11.into_af14(&mut gpioa.moder, &mut gpioa.afrh);
-    let usb_dp = usb_dp.into_af14(&mut gpioa.moder, &mut gpioa.afrh);
-
-    let usb = Peripheral {
-        usb: dp.USB,
-        pin_dm: usb_dm,
-        pin_dp: usb_dp,
-    };
-
-    let usb_rx_mem = unsafe {
-        static mut USB_RX_MEM: [u8; DEFAULT_USB_RX_BUFFER_CAPACITY] =
-            [0; DEFAULT_USB_RX_BUFFER_CAPACITY];
-        &mut USB_RX_MEM[..]
-    };
-    let usb_tx_mem = unsafe {
-        static mut USB_TX_MEM: [u8; DEFAULT_USB_TX_BUFFER_CAPACITY] =
-            [0; DEFAULT_USB_TX_BUFFER_CAPACITY];
-        &mut USB_TX_MEM[..]
-    };
-
-    let usb_bus = UsbBus::new(usb);
-    // HACK: make the borrow have a static lifetime
-    let usb_bus_borrow: &'static usb_device::bus::UsbBusAllocator<UsbBus<Peripheral>> =
-        unsafe { core::mem::transmute::<_, _>(&usb_bus) };
-    let usb_serial_port = SerialPort::new_with_store(&usb_bus_borrow, usb_rx_mem, usb_tx_mem);
-    let mut usb_dev = UsbDeviceBuilder::new(&usb_bus_borrow, UsbVidPid(0x16c0, 0x27dd))
-        .manufacturer("StuffByJon")
-        .product("Night Light Debug Logger")
-        .serial_number("0001")
-        .device_class(USB_CLASS_CDC)
-        .build();
-    let mut usb_timer = Timer::tim3(dp.TIM3, 100.hz(), clocks, &mut rcc.apb1);
-
-    unsafe {
-        LOGGER.set_inner(SerialPortLogger::from(usb_serial_port));
-        log::set_logger(&LOGGER).unwrap();
-    }
-    log::set_max_level(log::LevelFilter::Trace);
-
-    for _ in 0..5000 {
-        iwdg.feed();
-        if let Some(port) = LOGGER.inner_mut() {
-            port.poll(&mut usb_dev);
-        }
-        asm::delay(clocks.sysclk().0 / 5000);
-    }
-
     // System clock tracking millis, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
@@ -192,13 +119,8 @@ fn main() -> ! {
     loop {
         iwdg.feed();
 
-        if usb_timer.wait().is_ok() {
-            if let Some(port) = LOGGER.inner_mut() {
-                port.poll(&mut usb_dev);
-            }
-        }
-
         if let Some(cmd) = unsafe { IR_CMD_QUEUE.dequeue() } {
+            led.toggle().ok();
             controller.handle_ir_command(cmd);
         }
 
@@ -209,9 +131,7 @@ fn main() -> ! {
         if SYS_CLOCK.is_near_wrap_around() {
             warn!("System clock is near the wrap around, resetting");
             loop {
-                if let Some(port) = LOGGER.inner_mut() {
-                    port.poll(&mut usb_dev);
-                }
+                asm::nop();
             }
         }
     }

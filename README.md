@@ -62,6 +62,13 @@ openocd -f openocd.cfg -c "program /path/to/binary verify reset"
 
 ### Debug/stdout
 
+The debug serial port is connected to USART1, PB6 Tx, PB7 Rx.
+
+```bash
+stty -F /dev/ttyUSB0 115200
+cat /dev/ttyUSB0
+```
+
 ```bash
 openocd -f openocd.cfg
 ```
