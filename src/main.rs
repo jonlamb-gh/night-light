@@ -21,6 +21,7 @@ use hal::{
     gpio::{gpiob::PB9, Floating, Input},
     interrupt, pac,
     prelude::*,
+    serial::{Serial, Tx},
     spi::Spi,
     timer::{self, Timer},
     watchdog::IndependentWatchDog,
@@ -29,6 +30,8 @@ use infrared::PeriodicReceiver;
 use log::{info, warn};
 use night_light_lib::*;
 use ws2812_spi::Ws2812;
+
+static GLOBAL_LOGGER: Logger<Tx<pac::USART1>> = Logger::new();
 
 static SYS_CLOCK: SystemClock = SystemClock::new();
 
@@ -59,6 +62,9 @@ fn main() -> ! {
     iwdg.stop_on_debug(&dp.DBGMCU, false);
     iwdg.start(500.ms());
 
+    // System clock tracking millis, interrupt driven
+    SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
+
     let mut gpiob = dp.GPIOB.split(&mut rcc.ahb);
     let mut gpioc = dp.GPIOC.split(&mut rcc.ahb);
 
@@ -67,6 +73,28 @@ fn main() -> ! {
         .into_push_pull_output(&mut gpioc.moder, &mut gpioc.otyper);
     // LED on, active low
     led.set_low().ok();
+
+    // Setup USART1 for the logger impl
+    // PB6 Tx AF7
+    // PB7 Rx AF7
+    let uart_tx = gpiob.pb6.into_af7(&mut gpiob.moder, &mut gpiob.afrl);
+    let uart_rx = gpiob.pb7.into_af7(&mut gpiob.moder, &mut gpiob.afrl);
+
+    let serial = Serial::usart1(
+        dp.USART1,
+        (uart_tx, uart_rx),
+        115_200.bps(),
+        clocks,
+        &mut rcc.apb2,
+    );
+
+    // Construct a log impl over the transmitter
+    let (tx, _rx) = serial.split();
+    unsafe {
+        GLOBAL_LOGGER.set_inner(tx);
+        log::set_logger(&GLOBAL_LOGGER).unwrap();
+    }
+    log::set_max_level(log::LevelFilter::Trace);
 
     let spi_pins = {
         let sck = gpiob.pb3.into_af5(&mut gpiob.moder, &mut gpiob.afrl);
@@ -107,9 +135,6 @@ fn main() -> ! {
     unsafe {
         pac::NVIC::unmask(interrupt::TIM2);
     };
-
-    // System clock tracking millis, interrupt driven
-    SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
     let mut controller = Controller::new(led_controller, &SYS_CLOCK);
     let mut controller_update_timer = Timer::tim4(dp.TIM4, 200.hz(), clocks, &mut rcc.apb1);
