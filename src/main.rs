@@ -52,7 +52,7 @@ fn main() -> ! {
     let clocks = rcc
         .cfgr
         .use_hse(8.mhz())
-        .sysclk(48.mhz())
+        .sysclk(72.mhz())
         .pclk1(24.mhz())
         .pclk2(24.mhz())
         .freeze(&mut flash.acr);
@@ -111,10 +111,8 @@ fn main() -> ! {
         &mut rcc.apb2,
     );
 
-    let led_driver = Ws2812::new_sk6812w(spi);
-    let mut led_controller = LedController::new(led_driver);
-    led_controller.set_all_off();
-    led_controller.update_leds().ok();
+    let mut led_driver = InfallibleSk6812w::from(Ws2812::new_sk6812w(spi));
+    led_driver.set_off();
 
     let ir_pin = gpioa
         .pa15
@@ -135,7 +133,7 @@ fn main() -> ! {
         pac::NVIC::unmask(interrupt::TIM2);
     };
 
-    let mut controller = Controller::new(led_controller, &SYS_CLOCK);
+    let mut controller = Controller::new(led_driver, &SYS_CLOCK);
     let mut controller_update_timer = Timer::tim4(dp.TIM4, 200.hz(), clocks, &mut rcc.apb1);
 
     info!("Night light initialized");

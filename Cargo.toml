@@ -28,10 +28,6 @@ version = "0.6"
 default-features = false
 features = ["rt", "unproven", "stm32f303xc"]
 
-[dependencies.err-derive]
-version = "0.3"
-default-features = false
-
 [dependencies.smlang]
 version = "0.3"
 features = ["graphviz"]

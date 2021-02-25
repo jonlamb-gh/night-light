@@ -21,6 +21,7 @@ impl<T> Logger<T> {
         }
     }
 
+    /// # Safety
     pub unsafe fn set_inner(&self, inner: T) {
         let _ = (*self.inner.get()).stdout.replace(inner);
     }
@@ -56,4 +57,3 @@ impl<T: serial::Write<u8>> fmt::Write for Inner<T> {
         Ok(())
     }
 }
-
