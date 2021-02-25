@@ -44,8 +44,8 @@ where
                 self.sm.process_event(Events::Off).ok();
             }
             Button::On => {
-                // TODO - default on color
-                let color = RGBW8::new_alpha(0, 0, 0, White(255));
+                // TODO - default on color / previous color
+                let color = RGBW8::new_alpha(0, 0, 0, White(128));
                 self.sm.process_event(Events::ManualColor(color)).ok();
             }
             Button::Flash => {
@@ -72,6 +72,14 @@ where
             // RGBA { r: 0, g: 128, b: 0, a: White(0) }
             Button::Green => {
                 let color = colors::GREEN.new_alpha(White(0));
+                self.sm.process_event(Events::ManualColor(color)).ok();
+            }
+            Button::Red => {
+                let color = colors::RED.new_alpha(White(0));
+                self.sm.process_event(Events::ManualColor(color)).ok();
+            }
+            Button::Blue => {
+                let color = colors::BLUE.new_alpha(White(0));
                 self.sm.process_event(Events::ManualColor(color)).ok();
             }
             _ => (), // TODO
@@ -141,6 +149,7 @@ mod private {
             debug!("Setting LEDs off");
             self.leds.set_all_off();
             self.update_leds();
+            // TODO - some pixels are staying on
         }
 
         fn update_leds(&mut self) {

@@ -93,6 +93,20 @@ cargo run
   - Schematic: [link](https://robotdyn.com/pub/media/GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem/DOCS/Schematic==GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem.pdf)
 * TODO
 
+### Pins
+
+| Black Pill GPIO | Description |
+| :---       |     ---: |
+| PA15       | IR input |
+| PA12       | Button input |
+| PA11       | Vibration sensor input |
+| PB3        | SPI1 SCK (NC) |
+| PB4        | SPI1 MISO (NC) |
+| PB5        | Pixel data output SPI1 MOSI |
+| PB6        | Logger USART1 Tx |
+| PB7        | Logger USART1 Rx |
+| PC13       | On-board LED |
+
 ## Links
 
 * [stm32f3xx-hal docs](https://docs.rs/stm32f3xx-hal/0.6.1/stm32f3xx_hal/)

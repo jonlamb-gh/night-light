@@ -1,3 +1,5 @@
+// TODO - rename to led.rs
+
 use embedded_hal::spi::FullDuplex;
 use err_derive::Error;
 use smart_leds::SmartLedsWrite;
@@ -6,7 +8,27 @@ use ws2812_spi::{devices::Sk6812w, Ws2812};
 pub use smart_leds::{colors, hsv::White, RGBW};
 pub type RGBW8 = RGBW<u8>;
 
-pub const NUM_LEDS: usize = 12;
+pub const COLOR_OFF: RGBW8 = RGBW {
+    r: 0,
+    g: 0,
+    b: 0,
+    a: White(0),
+};
+
+// TODO - add brightness later
+pub trait InfallibleLedDriver {
+    fn set_pixels(&mut self, color: &RGBW8);
+
+    fn set_off(&mut self) {
+        self.set_pixels(&COLOR_OFF);
+    }
+}
+
+// TODO
+// newtype for InfallibleSk6812w
+
+const NUM_LEDS: usize = 8;
+//const NUM_LEDS: usize = 12;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Error)]
 pub enum Error {
@@ -17,6 +39,7 @@ pub enum Error {
 pub struct LedController<SPI> {
     driver: Ws2812<SPI, Sk6812w>,
     brightness: u8,
+    // TODO - driver uses an iterator, don't need the pixels data, all the same color/brightness
     pixels: [RGBW<u8>; NUM_LEDS],
 }
 

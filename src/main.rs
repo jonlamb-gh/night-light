@@ -18,7 +18,7 @@ use panic_abort as _;
 use cortex_m::asm;
 use cortex_m_rt::{entry, exception, ExceptionFrame};
 use hal::{
-    gpio::{gpiob::PB9, Floating, Input},
+    gpio::{gpioa::PA15, Floating, Input},
     interrupt, pac,
     prelude::*,
     serial::{Serial, Tx},
@@ -35,7 +35,7 @@ static GLOBAL_LOGGER: Logger<Tx<pac::USART1>> = Logger::new();
 
 static SYS_CLOCK: SystemClock = SystemClock::new();
 
-type IrRecvrPin = PB9<Input<Floating>>;
+type IrRecvrPin = PA15<Input<Floating>>;
 static mut IR_TIMER: Option<Timer<pac::TIM2>> = None;
 static mut IR_RECVR: Option<IrReceiver<IrRecvrPin>> = None;
 static mut IR_CMD_QUEUE: IrCommandQueue = IrCommandQueue::new();
@@ -62,9 +62,10 @@ fn main() -> ! {
     iwdg.stop_on_debug(&dp.DBGMCU, false);
     iwdg.start(500.ms());
 
-    // System clock tracking millis, interrupt driven
+    // System clock tracking milliseconds, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
 
+    let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
     let mut gpiob = dp.GPIOB.split(&mut rcc.ahb);
     let mut gpioc = dp.GPIOC.split(&mut rcc.ahb);
 
@@ -75,8 +76,6 @@ fn main() -> ! {
     led.set_low().ok();
 
     // Setup USART1 for the logger impl
-    // PB6 Tx AF7
-    // PB7 Rx AF7
     let uart_tx = gpiob.pb6.into_af7(&mut gpiob.moder, &mut gpiob.afrl);
     let uart_rx = gpiob.pb7.into_af7(&mut gpiob.moder, &mut gpiob.afrl);
 
@@ -117,9 +116,9 @@ fn main() -> ! {
     led_controller.set_all_off();
     led_controller.update_leds().ok();
 
-    let ir_pin = gpiob
-        .pb9
-        .into_floating_input(&mut gpiob.moder, &mut gpiob.pupdr);
+    let ir_pin = gpioa
+        .pa15
+        .into_floating_input(&mut gpioa.moder, &mut gpioa.pupdr);
 
     let mut ir_timer = Timer::tim2(dp.TIM2, IR_SAMPLE_RATE, clocks, &mut rcc.apb1);
     ir_timer.listen(timer::Event::Update);
