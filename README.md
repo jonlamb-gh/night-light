@@ -5,9 +5,7 @@ The controller runs a little state machine, generated vi [smlang](https://crates
 
 ## IR Receiver
 
-Protocol: NEC variant with 16 bit address and Nec standard timing
-
-TODO - add button map for the buttons
+Protocol: NEC variant with 16 bit address and NEC standard timing
 
 ## Build the Firmware
 

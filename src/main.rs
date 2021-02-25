@@ -2,13 +2,6 @@
 #![no_main]
 // TODO - lints
 
-// WS2812 leds
-// https://crates.io/crates/smart-leds
-// https://github.com/smart-leds-rs/ws2812-spi-rs
-// https://docs.rs/smart-leds/0.3.0/smart_leds/
-// https://docs.rs/ws2812-spi/0.4.0/ws2812_spi/index.html
-// https://github.com/smart-leds-rs/smart-leds-samples/blob/master/stm32f1-examples/examples/stm32f1_ws2812_spi_blink.rs
-//
 // low power modes
 // timer to enter low power / sleep mode, reset system clock on wakeup
 // https://github.com/stm32-rs/stm32f3xx-hal/issues/108
@@ -60,7 +53,7 @@ fn main() -> ! {
 
     let mut iwdg = IndependentWatchDog::new(dp.IWDG);
     iwdg.stop_on_debug(&dp.DBGMCU, false);
-    iwdg.start(500.ms());
+    iwdg.start(1000.ms());
 
     // System clock tracking milliseconds, interrupt driven
     SYS_CLOCK.enable_systick_interrupt(cp.SYST, clocks);
@@ -156,6 +149,8 @@ fn main() -> ! {
                 asm::nop();
             }
         }
+
+        asm::wfi();
     }
 }
 

@@ -1,5 +1,3 @@
-// TODO - use https://crates.io/crates/embedded-time
-
 use core::fmt;
 use core::sync::atomic::{AtomicU32, Ordering::SeqCst};
 use hal::rcc::Clocks;
