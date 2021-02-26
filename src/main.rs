@@ -106,10 +106,8 @@ fn main() -> ! {
     let ir_pin = gpioa
         .pa15
         .into_floating_input(&mut gpioa.moder, &mut gpioa.pupdr);
-
     let mut ir_timer = Timer::tim2(dp.TIM2, IR_SAMPLE_RATE, clocks, &mut rcc.apb1);
     ir_timer.listen(timer::Event::Update);
-
     let ir_recvr = PeriodicReceiver::new(ir_pin, IR_SAMPLE_RATE.0);
 
     unsafe {
@@ -117,13 +115,17 @@ fn main() -> ! {
         IR_RECVR.replace(ir_recvr);
     }
 
+    let _vib_pin = gpioa
+        .pa11
+        .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
+
+    let mut controller = Controller::new(led_driver, &SYS_CLOCK);
+    let mut controller_update_timer = Timer::tim4(dp.TIM4, 200.hz(), clocks, &mut rcc.apb1);
+
     pac::NVIC::unpend(interrupt::TIM2);
     unsafe {
         pac::NVIC::unmask(interrupt::TIM2);
     };
-
-    let mut controller = Controller::new(led_driver, &SYS_CLOCK);
-    let mut controller_update_timer = Timer::tim4(dp.TIM4, 200.hz(), clocks, &mut rcc.apb1);
 
     info!("Night light initialized");
 

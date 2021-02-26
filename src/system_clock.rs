@@ -57,7 +57,7 @@ unsafe impl Send for SystemClock {}
 unsafe impl Sync for SystemClock {}
 
 impl SystemClock {
-    pub const NEAR_WRAP_AROUND_VALUE: Instant = Instant(core::u32::MAX - Instant::TEN_MINUTES.0);
+    pub const NEAR_WRAP_AROUND_VALUE: Instant = Instant(core::u32::MAX - Instant::ONE_HOUR.0);
 
     pub const fn new() -> Self {
         SystemClock(AtomicU32::new(0))

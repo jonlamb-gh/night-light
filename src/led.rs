@@ -1,4 +1,4 @@
-use core::{fmt, iter};
+use core::{cmp::Ordering, fmt, iter};
 use embedded_hal::spi::FullDuplex;
 use log::error;
 use smart_leds::SmartLedsWrite;
@@ -8,6 +8,8 @@ pub use smart_leds::{colors, hsv::White, RGBW};
 #[allow(clippy::upper_case_acronyms)]
 pub type RGBW8 = RGBW<u8>;
 
+// TODO - BasicColor enum with all variants on the remote
+// iterator/enumerator for the fade/strobe modes to walk
 pub const COLOR_OFF: RGBW8 = RGBW {
     r: 0,
     g: 0,
@@ -21,6 +23,7 @@ pub trait FadeOffRgbw {
     fn step_down(&mut self);
 }
 
+// TODO - this can just be a wrapper to FadeToRgbw
 impl FadeOffRgbw for RGBW8 {
     fn set_off(&mut self) {
         self.r = 0;
@@ -41,11 +44,40 @@ impl FadeOffRgbw for RGBW8 {
     }
 }
 
-// brightness could be a ext method
+pub trait FadeToRgbw {
+    fn destination_reached(&self, destination: &RGBW8) -> bool;
 
-// TODO - FadeToRgbw
-// source & destination colors
-// fade from src to dst
+    fn step_to(&mut self, destination: &RGBW8);
+}
+
+impl FadeToRgbw for RGBW8 {
+    fn destination_reached(&self, destination: &RGBW8) -> bool {
+        self == destination
+    }
+
+    fn step_to(&mut self, destination: &RGBW8) {
+        match self.r.cmp(&destination.r) {
+            Ordering::Greater => self.r = self.r.saturating_sub(1),
+            Ordering::Less => self.r = self.r.saturating_add(1),
+            Ordering::Equal => (),
+        }
+        match self.g.cmp(&destination.g) {
+            Ordering::Greater => self.g = self.g.saturating_sub(1),
+            Ordering::Less => self.g = self.g.saturating_add(1),
+            Ordering::Equal => (),
+        }
+        match self.b.cmp(&destination.b) {
+            Ordering::Greater => self.b = self.b.saturating_sub(1),
+            Ordering::Less => self.b = self.b.saturating_add(1),
+            Ordering::Equal => (),
+        }
+        match self.a.0.cmp(&destination.a.0) {
+            Ordering::Greater => self.a.0 = self.a.0.saturating_sub(1),
+            Ordering::Less => self.a.0 = self.a.0.saturating_add(1),
+            Ordering::Equal => (),
+        }
+    }
+}
 
 // TODO - add brightness later
 pub trait InfallibleLedDriver {
