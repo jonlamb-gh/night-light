@@ -15,6 +15,38 @@ pub const COLOR_OFF: RGBW8 = RGBW {
     a: White(0),
 };
 
+pub trait FadeOffRgbw {
+    fn set_off(&mut self);
+    fn is_off(&self) -> bool;
+    fn step_down(&mut self);
+}
+
+impl FadeOffRgbw for RGBW8 {
+    fn set_off(&mut self) {
+        self.r = 0;
+        self.g = 0;
+        self.b = 0;
+        self.a.0 = 0;
+    }
+
+    fn is_off(&self) -> bool {
+        self.r == 0 && self.g == 0 && self.b == 0 && self.a.0 == 0
+    }
+
+    fn step_down(&mut self) {
+        self.r = self.r.saturating_sub(1);
+        self.g = self.g.saturating_sub(1);
+        self.b = self.b.saturating_sub(1);
+        self.a.0 = self.a.0.saturating_sub(1);
+    }
+}
+
+// brightness could be a ext method
+
+// TODO - FadeToRgbw
+// source & destination colors
+// fade from src to dst
+
 // TODO - add brightness later
 pub trait InfallibleLedDriver {
     const NUM_LEDS: usize;
@@ -40,7 +72,8 @@ where
     E: fmt::Debug,
 {
     // TODO testing on the 8 pixel strip, the ring has 12
-    const NUM_LEDS: usize = 8;
+    //const NUM_LEDS: usize = 8;
+    const NUM_LEDS: usize = 1;
 
     fn set_pixels(&mut self, color: &RGBW8) {
         let pixels = iter::repeat(color).take(Self::NUM_LEDS);

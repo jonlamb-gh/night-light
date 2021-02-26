@@ -1,5 +1,5 @@
-use core::fmt;
 use core::sync::atomic::{AtomicU32, Ordering::SeqCst};
+use core::{fmt, ops};
 use hal::rcc::Clocks;
 use hal::stm32::SYST;
 use log::debug;
@@ -10,12 +10,13 @@ use log::debug;
 pub struct Instant(u32);
 
 impl Instant {
+    pub const ZERO: Self = Instant(0);
     pub const ONE_SECOND: Self = Instant(1000);
     pub const ONE_MINUTE: Self = Instant(1000 * 60);
     pub const TEN_MINUTES: Self = Instant(1000 * 60 * 10);
     pub const ONE_HOUR: Self = Instant(1000 * 60 * 60);
 
-    pub fn from_millis(ms: u32) -> Self {
+    pub const fn from_millis(ms: u32) -> Self {
         Instant(ms)
     }
 
@@ -37,6 +38,14 @@ impl From<Instant> for u32 {
 impl fmt::Display for Instant {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl ops::Add for Instant {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Instant(self.0 + other.0)
     }
 }
 
@@ -76,6 +85,10 @@ impl SystemClock {
     }
 
     pub fn now(&self) -> Instant {
-        Instant::from_millis(self.0.load(SeqCst))
+        Instant::from_millis(self.load())
+    }
+
+    fn load(&self) -> u32 {
+        self.0.load(SeqCst)
     }
 }

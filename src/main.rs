@@ -2,10 +2,6 @@
 #![no_main]
 // TODO - lints
 
-// low power modes
-// timer to enter low power / sleep mode, reset system clock on wakeup
-// https://github.com/stm32-rs/stm32f3xx-hal/issues/108
-
 use panic_abort as _;
 
 use cortex_m::asm;

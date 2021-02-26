@@ -1,7 +1,7 @@
 use crate::{
     colors, Button, InfallibleLedDriver, Instant, IrCommand, SystemClock, White, RGBW, RGBW8,
 };
-use private::*;
+use private::{Context, Events, StateMachine};
 
 // TODO
 // brightness handling
@@ -12,11 +12,13 @@ use private::*;
 const AUTO_ON_DURATION: Instant = Instant::ONE_MINUTE;
 const MANUAL_ON_DURATION: Instant = Instant::ONE_MINUTE;
 
+const FADE_OFF_STEP_DURATION: Instant = Instant::from_millis(10);
+
 //const AUTO_ON_DURATION: Instant = Instant::TEN_MINUTES;
 //const MANUAL_ON_DURATION: Instant = Instant::ONE_HOUR;
 
 /// Color used for AutoOn and ManualOn
-pub const DEFAULT_COLOR: RGBW8 = RGBW {
+const DEFAULT_COLOR: RGBW8 = RGBW {
     r: 10,
     g: 0,
     b: 0,
@@ -49,28 +51,27 @@ where
     pub fn handle_ir_command(&mut self, cmd: IrCommand) {
         match cmd.button {
             Button::Off => {
-                self.sm.process_event(Events::Off).ok();
+                if !cmd.repeat {
+                    self.sm.process_event(Events::Off).ok();
+                }
             }
             Button::On => {
                 self.sm.process_event(Events::ManualOn(DEFAULT_COLOR)).ok();
             }
             Button::White => {
-                let color = RGBW8::new_alpha(0, 0, 0, White(32));
+                let color = RGBW8::new_alpha(0, 0, 0, White(255));
                 self.sm.process_event(Events::ManualOn(color)).ok();
             }
             Button::Green => {
-                //let color = colors::GREEN.new_alpha(White(0));
-                let color = RGBW8::new_alpha(0, 32, 0, White(0));
+                let color = colors::GREEN.new_alpha(White(0));
                 self.sm.process_event(Events::ManualOn(color)).ok();
             }
             Button::Red => {
-                //let color = colors::RED.new_alpha(White(0));
-                let color = RGBW8::new_alpha(32, 0, 0, White(0));
+                let color = colors::RED.new_alpha(White(0));
                 self.sm.process_event(Events::ManualOn(color)).ok();
             }
             Button::Blue => {
-                //let color = colors::BLUE.new_alpha(White(0));
-                let color = RGBW8::new_alpha(0, 0, 32, White(0));
+                let color = colors::BLUE.new_alpha(White(0));
                 self.sm.process_event(Events::ManualOn(color)).ok();
             }
             /*
@@ -86,11 +87,9 @@ where
 }
 
 mod private {
-    use super::{
-        InfallibleLedDriver, Instant, SystemClock, AUTO_ON_DURATION, DEFAULT_COLOR,
-        MANUAL_ON_DURATION, RGBW8,
-    };
-    use core::cmp;
+    use super::{AUTO_ON_DURATION, DEFAULT_COLOR, FADE_OFF_STEP_DURATION, MANUAL_ON_DURATION};
+    use crate::{FadeOffRgbw, InfallibleLedDriver, Instant, SystemClock, RGBW8};
+    use core::cell::RefCell;
     use log::debug;
     use smlang::statemachine;
 
@@ -110,8 +109,16 @@ mod private {
         Off + AutoOn / auto_on_action = On,
         Off + ManualOn(RGBW8) / manual_on_action = On,
 
-        On(OnStateData) + Off / on_to_off_action = Off,
-        On(OnStateData) + TimerCheck [on_timer_check_guard] / on_to_off_action = Off,
+        FadeOff(RefCell<FadeOffStateData>) + TimerCheck [fade_off_timer_check_guard] / fade_off_to_off_action = Off,
+        // Off again while fading will force off
+        FadeOff(RefCell<FadeOffStateData>) + Off / fade_off_to_off_action = Off,
+
+        // Manual/Auto-On while in FadeOff ok
+        FadeOff(RefCell<FadeOffStateData>) + ManualOn(RGBW8) / fade_off_to_on_action = On,
+        FadeOff(RefCell<FadeOffStateData>) + AutoOn / fade_off_auto_on_to_on_action = On,
+
+        On(OnStateData) + Off / on_to_fade_off_action = FadeOff,
+        On(OnStateData) + TimerCheck [on_timer_check_guard] / on_to_fade_off_action = FadeOff,
 
         On(OnStateData) + ManualOn(RGBW8) / manual_on_to_on_action = On,
         On(OnStateData) + AutoOn / auto_on_to_on_action = On,
@@ -120,7 +127,6 @@ mod private {
     pub struct Context<LED> {
         driver: LED,
         clock: &'static SystemClock,
-        // TODO - store current color for fade on/off
     }
 
     impl<LED> Context<LED>
@@ -129,6 +135,11 @@ mod private {
     {
         pub fn new(driver: LED, clock: &'static SystemClock) -> Self {
             Context { driver, clock }
+        }
+
+        fn common_enter_off_state(&mut self) {
+            debug!("Entered Off");
+            self.driver.set_off();
         }
     }
 
@@ -149,29 +160,6 @@ mod private {
                 color: DEFAULT_COLOR,
                 started_at: self.clock.now(),
             }
-        }
-
-        fn on_to_off_action(&mut self, _state_data: &OnStateData) {
-            debug!("Entered Off");
-            /*
-            let max_rg = cmp::max(state_data.color.r, state_data.color.g);
-            let max_ba = cmp::max(state_data.color.b, state_data.color.a.0);
-            let max_channel = cmp::max(max_rg, max_ba);
-            let mut color = state_data.color.clone();
-            for _ in 0..max_channel {
-                color.r = color.r.saturating_sub(1);
-                color.g = color.g.saturating_sub(1);
-                color.b = color.b.saturating_sub(1);
-                color.a.0 = color.a.0.saturating_sub(1);
-                self.driver.set_pixels(&color);
-                // TODO - DELAY some ms (3), add a Delay impl to SystemClock
-                // or tweak the watchdog
-                // or some fade_on / fade_off methods
-                // so that other cmds can interrupt it
-                cortex_m::asm::delay(500_000);
-            }
-            */
-            self.driver.set_off();
         }
 
         fn on_timer_check_guard(&mut self, state_data: &OnStateData) -> bool {
@@ -203,6 +191,50 @@ mod private {
         fn auto_on_to_on_action(&mut self, _state_data: &OnStateData) -> OnStateData {
             self.auto_on_action()
         }
+
+        fn fade_off_to_on_action(
+            &mut self,
+            _state_data: &RefCell<FadeOffStateData>,
+            event_data: &RGBW8,
+        ) -> OnStateData {
+            self.manual_on_action(event_data)
+        }
+
+        fn on_to_fade_off_action(&mut self, state_data: &OnStateData) -> RefCell<FadeOffStateData> {
+            debug!("Entered FadeOff");
+            RefCell::new(FadeOffStateData {
+                color: state_data.color,
+                next_transition_at: self.clock.now() + FADE_OFF_STEP_DURATION,
+            })
+        }
+
+        fn fade_off_to_off_action(&mut self, _state_data: &RefCell<FadeOffStateData>) {
+            self.common_enter_off_state();
+        }
+
+        fn fade_off_auto_on_to_on_action(
+            &mut self,
+            _state_data: &RefCell<FadeOffStateData>,
+        ) -> OnStateData {
+            self.auto_on_action()
+        }
+
+        fn fade_off_timer_check_guard(&mut self, state_data: &RefCell<FadeOffStateData>) -> bool {
+            if !state_data.borrow().color.is_off() {
+                let now = self.clock.now();
+                if now >= state_data.borrow().next_transition_at {
+                    {
+                        let mut s = state_data.borrow_mut();
+                        s.next_transition_at = now + FADE_OFF_STEP_DURATION;
+                        s.color.step_down();
+                    }
+                    self.driver.set_pixels(&state_data.borrow().color);
+                }
+                state_data.borrow().color.is_off()
+            } else {
+                true
+            }
+        }
     }
 
     #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -210,5 +242,11 @@ mod private {
         pub mode: Mode,
         pub color: RGBW8,
         pub started_at: Instant,
+    }
+
+    #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+    pub struct FadeOffStateData {
+        pub color: RGBW8,
+        pub next_transition_at: Instant,
     }
 }
