@@ -1,5 +1,5 @@
 use crate::{
-    colors, Button, InfallibleLedDriver, Instant, IrCommand, SystemClock, White, RGBW, RGBW8,
+    BasicColor, Button, InfallibleLedDriver, Instant, IrCommand, SystemClock, White, RGBW, RGBW8,
 };
 use log::debug;
 use private::{Context, Events, StateMachine};
@@ -48,6 +48,8 @@ where
     }
 
     pub fn handle_ir_command(&mut self, cmd: IrCommand) {
+        let maybe_btn_color = BasicColor::from_button(cmd.button);
+
         match cmd.button {
             Button::Off if !cmd.repeat => {
                 self.sm.process_event(Events::Off).ok();
@@ -59,17 +61,10 @@ where
                 let color = RGBW8::new_alpha(0, 0, 0, White(255));
                 self.sm.process_event(Events::ManualOn(color)).ok();
             }
-            Button::Green if !cmd.repeat => {
-                let color = colors::GREEN.new_alpha(White(0));
-                self.sm.process_event(Events::ManualOn(color)).ok();
-            }
-            Button::Red if !cmd.repeat => {
-                let color = colors::RED.new_alpha(White(0));
-                self.sm.process_event(Events::ManualOn(color)).ok();
-            }
-            Button::Blue if !cmd.repeat => {
-                let color = colors::BLUE.new_alpha(White(0));
-                self.sm.process_event(Events::ManualOn(color)).ok();
+            _btn if !cmd.repeat && maybe_btn_color.is_some() => {
+                self.sm
+                    .process_event(Events::ManualOn(maybe_btn_color.unwrap().as_rgbw()))
+                    .ok();
             }
             /*
             Button::Flash => {

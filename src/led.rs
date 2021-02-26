@@ -1,3 +1,4 @@
+use crate::Button;
 use core::{cmp::Ordering, fmt, iter};
 use embedded_hal::spi::FullDuplex;
 use log::error;
@@ -10,12 +11,102 @@ pub type RGBW8 = RGBW<u8>;
 
 // TODO - BasicColor enum with all variants on the remote
 // iterator/enumerator for the fade/strobe modes to walk
+// ColorWalker/Iterator
 pub const COLOR_OFF: RGBW8 = RGBW {
     r: 0,
     g: 0,
     b: 0,
     a: White(0),
 };
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum BasicColor {
+    Red,
+    Tomato,
+    DarkOrange,
+    Orange,
+    Yellow,
+
+    Green,
+    GreenYellow,
+    DarkOliveGreen,
+    DarkSeaGreen,
+    LightGreen,
+
+    Blue,
+    SkyBlue,
+    Violet,
+    Purple,
+    Magenta,
+}
+
+impl BasicColor {
+    pub fn enumerate() -> &'static [Self] {
+        use BasicColor::*;
+        &[
+            Red,
+            Tomato,
+            DarkOrange,
+            Orange,
+            Yellow,
+            Green,
+            GreenYellow,
+            DarkOliveGreen,
+            DarkSeaGreen,
+            LightGreen,
+            Blue,
+            SkyBlue,
+            Violet,
+            Purple,
+            Magenta,
+        ]
+    }
+
+    pub fn as_rgbw(self) -> RGBW8 {
+        use BasicColor::*;
+        match self {
+            Red => colors::RED.new_alpha(White(0)),
+            Tomato => colors::TOMATO.new_alpha(White(0)),
+            DarkOrange => colors::DARK_ORANGE.new_alpha(White(0)),
+            Orange => colors::ORANGE.new_alpha(White(0)),
+            Yellow => colors::YELLOW.new_alpha(White(0)),
+
+            Green => colors::GREEN.new_alpha(White(0)),
+            GreenYellow => colors::GREEN_YELLOW.new_alpha(White(0)),
+            DarkOliveGreen => colors::DARK_OLIVE_GREEN.new_alpha(White(0)),
+            DarkSeaGreen => colors::DARK_SEA_GREEN.new_alpha(White(0)),
+            LightGreen => colors::LIGHT_GREEN.new_alpha(White(0)),
+
+            Blue => colors::BLUE.new_alpha(White(0)),
+            SkyBlue => colors::SKY_BLUE.new_alpha(White(0)),
+            Violet => colors::VIOLET.new_alpha(White(0)),
+            Purple => colors::PURPLE.new_alpha(White(0)),
+            Magenta => colors::MAGENTA.new_alpha(White(0)),
+        }
+    }
+
+    pub fn from_button(b: Button) -> Option<Self> {
+        use BasicColor::*;
+        Some(match b {
+            Button::Red => Red,
+            Button::Red1 => Tomato,
+            Button::Red2 => DarkOrange,
+            Button::Red3 => Orange,
+            Button::Red4 => Yellow,
+            Button::Green => Green,
+            Button::Green1 => GreenYellow,
+            Button::Green2 => DarkOliveGreen,
+            Button::Green3 => DarkSeaGreen,
+            Button::Green4 => LightGreen,
+            Button::Blue => Blue,
+            Button::Blue1 => SkyBlue,
+            Button::Blue2 => Violet,
+            Button::Blue3 => Purple,
+            Button::Blue4 => Magenta,
+            _ => return None,
+        })
+    }
+}
 
 pub trait FadeOffRgbw {
     fn set_off(&mut self);
