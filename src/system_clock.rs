@@ -9,6 +9,8 @@ use log::debug;
 #[repr(transparent)]
 pub struct Instant(u32);
 
+pub type Duration = Instant;
+
 impl Instant {
     pub const ZERO: Self = Instant(0);
     pub const ONE_SECOND: Self = Instant(1000);
@@ -22,10 +24,6 @@ impl Instant {
 
     pub fn as_millis(self) -> u32 {
         self.0
-    }
-
-    pub fn saturation_sub(self, rhs: Self) -> Self {
-        Instant(self.0.saturating_sub(rhs.0))
     }
 }
 
@@ -86,6 +84,15 @@ impl SystemClock {
 
     pub fn now(&self) -> Instant {
         Instant::from_millis(self.load())
+    }
+
+    pub fn duration_since(&self, earlier: Instant) -> Duration {
+        Duration::from_millis(
+            self.now()
+                .0
+                .checked_sub(earlier.0)
+                .expect("Supplied instant is later than self"),
+        )
     }
 
     fn load(&self) -> u32 {

@@ -1,8 +1,7 @@
-use crate::hal::hal::serial;
+use crate::hal::{block, hal::serial};
 use core::cell::UnsafeCell;
 use core::fmt::{self, Write};
 use log::{Metadata, Record};
-use nb::block;
 
 pub struct Logger<T> {
     inner: UnsafeCell<Inner<T>>,

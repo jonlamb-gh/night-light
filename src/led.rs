@@ -9,9 +9,6 @@ pub use smart_leds::{colors, hsv::White, RGBW};
 #[allow(clippy::upper_case_acronyms)]
 pub type RGBW8 = RGBW<u8>;
 
-// TODO - BasicColor enum with all variants on the remote
-// iterator/enumerator for the fade/strobe modes to walk
-// ColorWalker/Iterator
 pub const COLOR_OFF: RGBW8 = RGBW {
     r: 0,
     g: 0,
@@ -36,7 +33,7 @@ pub enum BasicColor {
     Blue,
     SkyBlue,
     Violet,
-    Purple,
+    PaleVioletRed,
     Magenta,
 }
 
@@ -57,7 +54,7 @@ impl BasicColor {
             Blue,
             SkyBlue,
             Violet,
-            Purple,
+            PaleVioletRed,
             Magenta,
         ]
     }
@@ -80,7 +77,7 @@ impl BasicColor {
             Blue => colors::BLUE.new_alpha(White(0)),
             SkyBlue => colors::SKY_BLUE.new_alpha(White(0)),
             Violet => colors::VIOLET.new_alpha(White(0)),
-            Purple => colors::PURPLE.new_alpha(White(0)),
+            PaleVioletRed => colors::PALE_VIOLET_RED.new_alpha(White(0)),
             Magenta => colors::MAGENTA.new_alpha(White(0)),
         }
     }
@@ -101,10 +98,28 @@ impl BasicColor {
             Button::Blue => Blue,
             Button::Blue1 => SkyBlue,
             Button::Blue2 => Violet,
-            Button::Blue3 => Purple,
+            Button::Blue3 => PaleVioletRed,
             Button::Blue4 => Magenta,
             _ => return None,
         })
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct RandomColorGen(oorandom::Rand32);
+
+impl RandomColorGen {
+    pub fn new(seed: u64) -> Self {
+        RandomColorGen(oorandom::Rand32::new(seed))
+    }
+
+    pub fn rand_rgb(&mut self) -> RGBW8 {
+        RGBW8::new_alpha(
+            self.0.rand_range(0..256) as u8,
+            self.0.rand_range(0..256) as u8,
+            self.0.rand_range(0..256) as u8,
+            White(0),
+        )
     }
 }
 

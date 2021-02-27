@@ -141,6 +141,7 @@ fn main() -> ! {
             controller.update();
         }
 
+        // TODO - AND is_off/idle
         if SYS_CLOCK.is_near_wrap_around() {
             warn!("System clock is near the wrap around, resetting");
             loop {

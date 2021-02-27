@@ -49,7 +49,6 @@ impl From<Nec16Command> for IrCommand {
     }
 }
 
-// TODO - add the others
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum Button {
     BrightnessDown,
