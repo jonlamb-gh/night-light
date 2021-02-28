@@ -6,18 +6,20 @@ use private::{Context, Events, StateMachine};
 
 // TODO
 // brightness handling
-// idle state with duration idle for system reset?
 
 const AUTO_ON_DURATION: Duration = Duration::ONE_MINUTE;
 const MANUAL_ON_DURATION: Duration = Duration::ONE_MINUTE;
 //const AUTO_ON_DURATION: Duration = Duration::TEN_MINUTES;
 //const MANUAL_ON_DURATION: Duration = Duration::ONE_HOUR;
 
-// TODO - rm the saturation_sub() methods/etc on instant
 const ONOFF_FADE_STEP_DURATION: Duration = Duration::from_millis(10);
-const FADE_MODE_STEP_DURATION: Duration = Duration::from_millis(100);
 
-/// Color used for AutoOn and ManualOn
+const FLASH_MODE_STEP_DURATION: Duration = Duration::from_millis(5);
+const STROBE_MODE_STEP_DURATION: Duration = Duration::from_millis(5);
+const FADE_MODE_STEP_DURATION: Duration = Duration::from_millis(100);
+const SMOOTH_MODE_STEP_DURATION: Duration = Duration::from_millis(50);
+
+/// Color used for AutoOn and Button::On
 const DEFAULT_COLOR: RGBW8 = RGBW {
     r: 64,
     g: 0,
@@ -39,7 +41,14 @@ where
         Controller { sm }
     }
 
-    /// Call this on a timer, 1~10 ms should do
+    pub fn is_idle(&self) -> bool {
+        match self.sm.state() {
+            private::States::Off(state_data) => state_data.borrow().destination_color_reached(),
+            _ => false,
+        }
+    }
+
+    /// Call this on a timer, 1~5 ms should do
     pub fn update(&mut self) {
         self.sm.process_event(Events::TimerCheck).ok();
     }
@@ -50,26 +59,33 @@ where
 
     pub fn handle_ir_command(&mut self, cmd: IrCommand) {
         let maybe_btn_color = BasicColor::from_button(cmd.button);
-
-        // TODO - fixup the repeat checking, only brightness will allow it
         match cmd.button {
-            Button::Off if !cmd.repeat => {
+            Button::Off => {
                 self.sm.process_event(Events::ManualOff).ok();
             }
-            Button::On if !cmd.repeat => {
+            Button::On => {
                 self.sm.process_event(Events::ManualOn(DEFAULT_COLOR)).ok();
             }
-            Button::White if !cmd.repeat => {
+            Button::White => {
                 let color = RGBW8::new_alpha(0, 0, 0, White(255));
                 self.sm.process_event(Events::ManualOn(color)).ok();
             }
-            _btn if !cmd.repeat && maybe_btn_color.is_some() => {
+            _btn if maybe_btn_color.is_some() => {
                 self.sm
                     .process_event(Events::ManualOn(maybe_btn_color.unwrap().as_rgbw()))
                     .ok();
             }
-            Button::Fade if !cmd.repeat => {
+            Button::Fade => {
                 self.sm.process_event(Events::Fade).ok();
+            }
+            Button::Strobe => {
+                self.sm.process_event(Events::Strobe).ok();
+            }
+            Button::Smooth => {
+                self.sm.process_event(Events::Smooth).ok();
+            }
+            Button::Flash => {
+                self.sm.process_event(Events::Flash).ok();
             }
             _ => debug!("Ignoring {}", cmd),
         }
@@ -78,12 +94,13 @@ where
 
 mod private {
     use super::{
-        AUTO_ON_DURATION, DEFAULT_COLOR, FADE_MODE_STEP_DURATION, MANUAL_ON_DURATION,
-        ONOFF_FADE_STEP_DURATION,
+        AUTO_ON_DURATION, DEFAULT_COLOR, FADE_MODE_STEP_DURATION, FLASH_MODE_STEP_DURATION,
+        MANUAL_ON_DURATION, ONOFF_FADE_STEP_DURATION, SMOOTH_MODE_STEP_DURATION,
+        STROBE_MODE_STEP_DURATION,
     };
     use crate::{
-        FadeOffRgbw, FadeToRgbw, InfallibleLedDriver, Instant, RandomColorGen, SystemClock,
-        COLOR_OFF, RGBW8,
+        BasicColor, FadeOffRgbw, FadeToRgbw, InfallibleLedDriver, Instant, RandomColorGen,
+        SystemClock, COLOR_OFF, RGBW8,
     };
     use core::cell::RefCell;
     use log::debug;
@@ -94,10 +111,9 @@ mod private {
         AutoOn,
         ManualOn,
         Fade,
-        /*Flash,
-         *Smooth,
-         *Strobe,
-         *Fade, */
+        Strobe,
+        Smooth,
+        Flash,
     }
 
     statemachine! {
@@ -106,6 +122,9 @@ mod private {
         Off(OffStateData) + AutoOn / off_to_auto_on_action = On,
         Off(OffStateData) + ManualOn(RGBW8) / off_to_manual_on_action = On,
         Off(OffStateData) + Fade / off_to_fade_on_action = On,
+        Off(OffStateData) + Strobe / off_to_strobe_on_action = On,
+        Off(OffStateData) + Smooth / off_to_smooth_on_action = On,
+        Off(OffStateData) + Flash / off_to_flash_on_action = On,
         Off(OffStateData) + TimerCheck [off_timer_check_guard] / off_to_off_action = Off,
 
         On(OnStateData) + ManualOff / on_to_off_action = Off,
@@ -114,6 +133,9 @@ mod private {
         On(OnStateData) + ManualOn(RGBW8) / on_to_manual_on_action = On,
         On(OnStateData) + AutoOn / on_to_auto_on_action = On,
         On(OnStateData) + Fade / on_to_fade_on_action = On,
+        On(OnStateData) + Strobe / on_to_strobe_on_action = On,
+        On(OnStateData) + Smooth / on_to_smooth_on_action = On,
+        On(OnStateData) + Flash / on_to_flash_on_action = On,
     }
 
     pub struct Context<LED> {
@@ -131,6 +153,24 @@ mod private {
                 driver,
                 color_gen: RandomColorGen::new(clock.now().as_millis() as _),
                 clock,
+            }
+        }
+
+        fn next_rand_rgb(&mut self, current_color: RGBW8) -> RGBW8 {
+            loop {
+                let next = self.color_gen.rand_rgb();
+                if next != current_color {
+                    break next;
+                }
+            }
+        }
+
+        fn next_rand_color(&mut self, current_color: RGBW8) -> BasicColor {
+            loop {
+                let next = self.color_gen.rand_color();
+                if next.as_rgbw() != current_color {
+                    break next;
+                }
             }
         }
 
@@ -176,8 +216,27 @@ mod private {
         }
 
         fn off_to_fade_on_action(&mut self, state_data: &OffStateData) -> OnStateData {
-            let next_color = self.color_gen.rand_rgb();
-            self.common_enter_on(Mode::Fade, state_data.borrow().color, next_color)
+            let current_color = state_data.borrow().color;
+            let next_color = self.next_rand_rgb(current_color);
+            self.common_enter_on(Mode::Fade, current_color, next_color)
+        }
+
+        fn off_to_strobe_on_action(&mut self, state_data: &OffStateData) -> OnStateData {
+            let current_color = state_data.borrow().color;
+            let next_color = self.next_rand_rgb(current_color);
+            self.common_enter_on(Mode::Strobe, current_color, next_color)
+        }
+
+        fn off_to_smooth_on_action(&mut self, state_data: &OffStateData) -> OnStateData {
+            let current_color = state_data.borrow().color;
+            let next_color = self.next_rand_color(current_color).as_rgbw();
+            self.common_enter_on(Mode::Smooth, current_color, next_color)
+        }
+
+        fn off_to_flash_on_action(&mut self, state_data: &OffStateData) -> OnStateData {
+            let current_color = state_data.borrow().color;
+            let next_color = self.next_rand_color(current_color).as_rgbw();
+            self.common_enter_on(Mode::Flash, current_color, next_color)
         }
 
         fn off_to_off_action(&mut self, state_data: &OffStateData) -> OffStateData {
@@ -227,8 +286,27 @@ mod private {
         }
 
         fn on_to_fade_on_action(&mut self, state_data: &OnStateData) -> OnStateData {
-            let next_color = self.color_gen.rand_rgb();
-            self.common_enter_on(Mode::Fade, state_data.fade_to.borrow().color, next_color)
+            let current_color = state_data.fade_to.borrow().color;
+            let next_color = self.next_rand_rgb(current_color);
+            self.common_enter_on(Mode::Fade, current_color, next_color)
+        }
+
+        fn on_to_strobe_on_action(&mut self, state_data: &OnStateData) -> OnStateData {
+            let current_color = state_data.fade_to.borrow().color;
+            let next_color = self.next_rand_rgb(current_color);
+            self.common_enter_on(Mode::Strobe, current_color, next_color)
+        }
+
+        fn on_to_smooth_on_action(&mut self, state_data: &OnStateData) -> OnStateData {
+            let current_color = state_data.fade_to.borrow().color;
+            let next_color = self.next_rand_color(current_color).as_rgbw();
+            self.common_enter_on(Mode::Smooth, current_color, next_color)
+        }
+
+        fn on_to_flash_on_action(&mut self, state_data: &OnStateData) -> OnStateData {
+            let current_color = state_data.fade_to.borrow().color;
+            let next_color = self.next_rand_color(current_color).as_rgbw();
+            self.common_enter_on(Mode::Flash, current_color, next_color)
         }
 
         fn on_to_off_action(&mut self, state_data: &OnStateData) -> OffStateData {
@@ -251,6 +329,9 @@ mod private {
                 let should_step = match state_data.mode {
                     Mode::AutoOn | Mode::ManualOn => dur_since >= ONOFF_FADE_STEP_DURATION,
                     Mode::Fade => dur_since >= FADE_MODE_STEP_DURATION,
+                    Mode::Strobe => dur_since >= STROBE_MODE_STEP_DURATION,
+                    Mode::Smooth => dur_since >= SMOOTH_MODE_STEP_DURATION,
+                    Mode::Flash => dur_since >= FLASH_MODE_STEP_DURATION,
                 };
 
                 if should_step {
@@ -261,10 +342,16 @@ mod private {
                 }
 
                 if state_data.fade_to.borrow().destination_color_reached() {
+                    let current_color = state_data.fade_to.borrow().color;
                     match state_data.mode {
-                        Mode::Fade => {
-                            let next_color = self.color_gen.rand_rgb();
-                            debug!("Next fade color {:?}", next_color);
+                        Mode::Fade | Mode::Strobe => {
+                            let next_color = self.next_rand_rgb(current_color);
+                            debug!("Next color ({:?}) {:?}", state_data.mode, next_color);
+                            state_data.fade_to.borrow_mut().destination_color = next_color;
+                        }
+                        Mode::Smooth | Mode::Flash => {
+                            let next_color = self.next_rand_color(current_color).as_rgbw();
+                            debug!("Next color ({:?}) {:?}", state_data.mode, next_color);
                             state_data.fade_to.borrow_mut().destination_color = next_color;
                         }
                         _ => (),
@@ -313,7 +400,7 @@ mod private {
             self.color.step_to(&self.destination_color);
         }
 
-        fn destination_color_reached(&self) -> bool {
+        pub fn destination_color_reached(&self) -> bool {
             self.color.destination_reached(&self.destination_color)
         }
     }

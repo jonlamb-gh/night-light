@@ -25,6 +25,14 @@ impl Instant {
     pub fn as_millis(self) -> u32 {
         self.0
     }
+
+    pub fn duration_since(&self, earlier: Instant) -> Duration {
+        Duration::from_millis(
+            self.0
+                .checked_sub(earlier.0)
+                .expect("Supplied instant is later than self"),
+        )
+    }
 }
 
 impl From<Instant> for u32 {
@@ -87,12 +95,7 @@ impl SystemClock {
     }
 
     pub fn duration_since(&self, earlier: Instant) -> Duration {
-        Duration::from_millis(
-            self.now()
-                .0
-                .checked_sub(earlier.0)
-                .expect("Supplied instant is later than self"),
-        )
+        self.now().duration_since(earlier)
     }
 
     fn load(&self) -> u32 {

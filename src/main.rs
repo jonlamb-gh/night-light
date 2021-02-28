@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-// TODO - lints
 
 use panic_abort as _;
 
@@ -141,8 +140,7 @@ fn main() -> ! {
             controller.update();
         }
 
-        // TODO - AND is_off/idle
-        if SYS_CLOCK.is_near_wrap_around() {
+        if SYS_CLOCK.is_near_wrap_around() && controller.is_idle() {
             warn!("System clock is near the wrap around, resetting");
             loop {
                 asm::nop();
@@ -166,7 +164,10 @@ fn TIM2() {
 
     let recvr = unsafe { IR_RECVR.as_mut().unwrap() };
     if let Ok(Some(cmd)) = recvr.poll() {
-        let _ = unsafe { IR_CMD_QUEUE.enqueue(cmd.into()).ok() };
+        let cmd = IrCommand::from(cmd);
+        if cmd.button.repeat_allowed() || !cmd.repeat {
+            let _ = unsafe { IR_CMD_QUEUE.enqueue(cmd).ok() };
+        }
     }
 }
 

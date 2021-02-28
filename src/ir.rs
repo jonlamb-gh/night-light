@@ -78,6 +78,13 @@ pub enum Button {
     Unknown(u8),
 }
 
+impl Button {
+    pub fn repeat_allowed(self) -> bool {
+        use Button::*;
+        matches!(self, BrightnessDown | BrightnessUp)
+    }
+}
+
 impl fmt::Display for Button {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)

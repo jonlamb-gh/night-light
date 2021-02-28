@@ -121,6 +121,12 @@ impl RandomColorGen {
             White(0),
         )
     }
+
+    pub fn rand_color(&mut self) -> BasicColor {
+        let colors = BasicColor::enumerate();
+        let index = self.0.rand_range(0..colors.len() as u32) as usize;
+        colors[index]
+    }
 }
 
 pub trait FadeOffRgbw {
@@ -129,7 +135,6 @@ pub trait FadeOffRgbw {
     fn step_down(&mut self);
 }
 
-// TODO - this can just be a wrapper to FadeToRgbw
 impl FadeOffRgbw for RGBW8 {
     fn set_off(&mut self) {
         self.r = 0;
