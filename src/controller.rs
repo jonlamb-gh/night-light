@@ -6,6 +6,7 @@ use private::{Context, Events, StateMachine};
 
 // TODO
 // brightness handling
+//   - could do steps that turn on/off entire leds instead of adjusting per-led
 
 const AUTO_ON_DURATION: Duration = Duration::ONE_MINUTE;
 const MANUAL_ON_DURATION: Duration = Duration::ONE_MINUTE;

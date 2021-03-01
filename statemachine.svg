@@ -51,52 +51,52 @@
 <title>On&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M607.53,-135.78C607.15,-145.17 607.97,-153.63 610,-153.63 611.24,-153.63 612.03,-150.48 612.37,-145.91"/>
 <polygon fill="blue" stroke="blue" points="615.87,-145.82 612.47,-135.78 608.87,-145.74 615.87,-145.82"/>
-<text text-anchor="middle" x="610" y="-157.43" font-family="Arial" font-size="14.00">Flash</text>
+<text text-anchor="middle" x="610" y="-157.43" font-family="Arial" font-size="14.00">ManualOn</text>
+</g>
+<!-- On&#45;&gt;On -->
+<g id="edge11" class="edge">
+<title>On&#45;&gt;On</title>
+<path fill="none" stroke="blue" d="M605.86,-135.88C603.71,-153.03 605.09,-171.63 610,-171.63 613.95,-171.63 615.62,-159.58 615,-145.95"/>
+<polygon fill="blue" stroke="blue" points="618.48,-145.55 614.14,-135.88 611.5,-146.14 618.48,-145.55"/>
+<text text-anchor="middle" x="610" y="-175.43" font-family="Arial" font-size="14.00">Smooth</text>
 </g>
 <!-- On&#45;&gt;On -->
 <g id="edge13" class="edge">
 <title>On&#45;&gt;On</title>
-<path fill="none" stroke="blue" d="M605.86,-135.88C603.71,-153.03 605.09,-171.63 610,-171.63 613.95,-171.63 615.62,-159.58 615,-145.95"/>
-<polygon fill="blue" stroke="blue" points="618.48,-145.55 614.14,-135.88 611.5,-146.14 618.48,-145.55"/>
-<text text-anchor="middle" x="610" y="-175.43" font-family="Arial" font-size="14.00">Fade</text>
+<path fill="none" stroke="blue" d="M604.81,-135.7C600.22,-160.04 601.95,-189.63 610,-189.63 616.98,-189.63 619.21,-167.37 616.68,-145.6"/>
+<polygon fill="blue" stroke="blue" points="620.14,-145.07 615.19,-135.7 613.22,-146.12 620.14,-145.07"/>
+<text text-anchor="middle" x="610" y="-193.43" font-family="Arial" font-size="14.00">Strobe</text>
 </g>
 <!-- On&#45;&gt;On -->
 <g id="edge14" class="edge">
 <title>On&#45;&gt;On</title>
-<path fill="none" stroke="blue" d="M604.81,-135.7C600.22,-160.04 601.95,-189.63 610,-189.63 616.98,-189.63 619.21,-167.37 616.68,-145.6"/>
-<polygon fill="blue" stroke="blue" points="620.14,-145.07 615.19,-135.7 613.22,-146.12 620.14,-145.07"/>
-<text text-anchor="middle" x="610" y="-193.43" font-family="Arial" font-size="14.00">AutoOn</text>
-</g>
-<!-- On&#45;&gt;On -->
-<g id="edge15" class="edge">
-<title>On&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M604.06,-135.74C596.76,-166.87 598.74,-207.63 610,-207.63 620.08,-207.63 622.72,-175.01 617.94,-145.85"/>
 <polygon fill="blue" stroke="blue" points="621.32,-144.87 615.94,-135.74 614.45,-146.23 621.32,-144.87"/>
-<text text-anchor="middle" x="610" y="-211.43" font-family="Arial" font-size="14.00">ManualOn</text>
+<text text-anchor="middle" x="610" y="-211.43" font-family="Arial" font-size="14.00">Fade</text>
 </g>
 <!-- On&#45;&gt;On -->
 <g id="edge16" class="edge">
 <title>On&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M603.52,-135.68C593.29,-173.42 595.45,-225.63 610,-225.63 623.3,-225.63 626.24,-182 618.84,-145.69"/>
 <polygon fill="blue" stroke="blue" points="622.18,-144.61 616.48,-135.68 615.37,-146.22 622.18,-144.61"/>
-<text text-anchor="middle" x="610" y="-229.43" font-family="Arial" font-size="14.00">Strobe</text>
+<text text-anchor="middle" x="610" y="-229.43" font-family="Arial" font-size="14.00">Flash</text>
 </g>
 <!-- On&#45;&gt;On -->
 <g id="edge17" class="edge">
 <title>On&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M603.09,-135.69C589.84,-179.89 592.14,-243.63 610,-243.63 626.57,-243.63 629.75,-188.77 619.54,-145.55"/>
 <polygon fill="blue" stroke="blue" points="622.87,-144.45 616.91,-135.69 616.1,-146.26 622.87,-144.45"/>
-<text text-anchor="middle" x="610" y="-247.43" font-family="Arial" font-size="14.00">Smooth</text>
+<text text-anchor="middle" x="610" y="-247.43" font-family="Arial" font-size="14.00">AutoOn</text>
 </g>
 <!-- On&#45;&gt;Off -->
-<g id="edge11" class="edge">
+<g id="edge12" class="edge">
 <title>On&#45;&gt;Off</title>
 <path fill="none" stroke="blue" d="M603.78,-135.81C597.65,-153.38 585.61,-178.98 565,-190.63 536.36,-206.8 519.64,-206.8 491,-190.63 473.93,-180.98 462.74,-161.77 455.92,-145.47"/>
 <polygon fill="blue" stroke="blue" points="459.07,-143.9 452.22,-135.81 452.53,-146.4 459.07,-143.9"/>
 <text text-anchor="middle" x="528" y="-206.43" font-family="Arial" font-size="14.00">ManualOff</text>
 </g>
 <!-- On&#45;&gt;Off -->
-<g id="edge12" class="edge">
+<g id="edge15" class="edge">
 <title>On&#45;&gt;Off</title>
 <path fill="none" stroke="blue" d="M582.58,-131.08C576.91,-133.38 570.87,-135.41 565,-136.63 532.79,-143.28 523.21,-143.28 491,-136.63 488.34,-136.08 485.65,-135.36 482.97,-134.52"/>
 <polygon fill="blue" stroke="blue" points="484.02,-131.18 473.42,-131.08 481.64,-137.77 484.02,-131.18"/>
@@ -107,7 +107,7 @@
 <title>Off&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M448.22,-136.05C451.02,-161.82 460.31,-207.78 491,-228.63 518.21,-247.11 537.79,-247.11 565,-228.63 591.98,-210.3 602.41,-172.58 606.45,-146.22"/>
 <polygon fill="blue" stroke="blue" points="609.96,-146.42 607.78,-136.05 603.01,-145.51 609.96,-146.42"/>
-<text text-anchor="middle" x="528" y="-245.43" font-family="Arial" font-size="14.00">AutoOn</text>
+<text text-anchor="middle" x="528" y="-245.43" font-family="Arial" font-size="14.00">ManualOn</text>
 </g>
 <!-- Off&#45;&gt;On -->
 <g id="edge4" class="edge">
@@ -128,24 +128,24 @@
 <title>Off&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M459.87,-99.55C467.68,-90.2 478.54,-79.71 491,-74.63 521.46,-62.22 534.54,-62.22 565,-74.63 574.15,-78.36 582.44,-85.01 589.29,-91.98"/>
 <polygon fill="blue" stroke="blue" points="586.82,-94.48 596.13,-99.55 592.02,-89.79 586.82,-94.48"/>
-<text text-anchor="middle" x="528" y="-78.43" font-family="Arial" font-size="14.00">ManualOn</text>
+<text text-anchor="middle" x="528" y="-78.43" font-family="Arial" font-size="14.00">Smooth</text>
 </g>
 <!-- Off&#45;&gt;On -->
 <g id="edge7" class="edge">
 <title>Off&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M452.41,-99.36C458.63,-82.04 470.68,-57.02 491,-45.63 519.69,-29.54 536.31,-29.54 565,-45.63 581.82,-55.06 592.98,-73.84 599.85,-89.85"/>
 <polygon fill="blue" stroke="blue" points="596.67,-91.33 603.59,-99.36 603.19,-88.77 596.67,-91.33"/>
-<text text-anchor="middle" x="528" y="-49.43" font-family="Arial" font-size="14.00">Smooth</text>
+<text text-anchor="middle" x="528" y="-49.43" font-family="Arial" font-size="14.00">Flash</text>
 </g>
 <!-- Off&#45;&gt;On -->
-<g id="edge8" class="edge">
+<g id="edge9" class="edge">
 <title>Off&#45;&gt;On</title>
 <path fill="none" stroke="blue" d="M448.72,-99.5C452.11,-75.17 462.07,-32.8 491,-13.63 518.41,4.54 537.59,4.54 565,-13.63 590.31,-30.4 601.1,-64.94 605.67,-89.62"/>
 <polygon fill="blue" stroke="blue" points="602.22,-90.19 607.28,-99.5 609.13,-89.07 602.22,-90.19"/>
-<text text-anchor="middle" x="528" y="-17.43" font-family="Arial" font-size="14.00">Flash</text>
+<text text-anchor="middle" x="528" y="-17.43" font-family="Arial" font-size="14.00">AutoOn</text>
 </g>
 <!-- Off&#45;&gt;Off -->
-<g id="edge9" class="edge">
+<g id="edge8" class="edge">
 <title>Off&#45;&gt;Off</title>
 <path fill="none" stroke="blue" d="M436.23,-135.78C434.73,-145.17 437.98,-153.63 446,-153.63 450.88,-153.63 454,-150.48 455.35,-145.91"/>
 <polygon fill="blue" stroke="blue" points="458.85,-145.92 455.77,-135.78 451.86,-145.63 458.85,-145.92"/>
@@ -158,12 +158,12 @@
 <text text-anchor="middle" x="136.5" y="-176.43" font-family="Arial" font-size="14.00">Init</text>
 <text text-anchor="middle" x="136.5" y="-161.43" font-family="Arial" font-size="14.00">[_] / init_action</text>
 </g>
-<!-- AutoOn -->
+<!-- ManualOn -->
 <g id="node6" class="node">
-<title>AutoOn</title>
-<polygon fill="none" stroke="black" points="224.5,-247.63 48.5,-247.63 48.5,-209.63 224.5,-209.63 224.5,-247.63"/>
-<text text-anchor="middle" x="136.5" y="-232.43" font-family="Arial" font-size="14.00">AutoOn</text>
-<text text-anchor="middle" x="136.5" y="-217.43" font-family="Arial" font-size="14.00">[_] / on_to_auto_on_action</text>
+<title>ManualOn</title>
+<polygon fill="none" stroke="black" points="234,-247.63 39,-247.63 39,-209.63 234,-209.63 234,-247.63"/>
+<text text-anchor="middle" x="136.5" y="-232.43" font-family="Arial" font-size="14.00">ManualOn</text>
+<text text-anchor="middle" x="136.5" y="-217.43" font-family="Arial" font-size="14.00">[_] / on_to_manual_on_action</text>
 </g>
 <!-- Strobe -->
 <g id="node7" class="node">
@@ -179,33 +179,33 @@
 <text text-anchor="middle" x="136.5" y="-344.43" font-family="Arial" font-size="14.00">Fade</text>
 <text text-anchor="middle" x="136.5" y="-329.43" font-family="Arial" font-size="14.00">[_] / on_to_fade_on_action</text>
 </g>
-<!-- ManualOn -->
-<g id="node9" class="node">
-<title>ManualOn</title>
-<polygon fill="none" stroke="black" points="234,-415.63 39,-415.63 39,-377.63 234,-377.63 234,-415.63"/>
-<text text-anchor="middle" x="136.5" y="-400.43" font-family="Arial" font-size="14.00">ManualOn</text>
-<text text-anchor="middle" x="136.5" y="-385.43" font-family="Arial" font-size="14.00">[_] / on_to_manual_on_action</text>
-</g>
 <!-- Smooth -->
-<g id="node10" class="node">
+<g id="node9" class="node">
 <title>Smooth</title>
-<polygon fill="none" stroke="black" points="234,-471.63 39,-471.63 39,-433.63 234,-433.63 234,-471.63"/>
-<text text-anchor="middle" x="136.5" y="-456.43" font-family="Arial" font-size="14.00">Smooth</text>
-<text text-anchor="middle" x="136.5" y="-441.43" font-family="Arial" font-size="14.00">[_] / on_to_smooth_on_action</text>
+<polygon fill="none" stroke="black" points="234,-415.63 39,-415.63 39,-377.63 234,-377.63 234,-415.63"/>
+<text text-anchor="middle" x="136.5" y="-400.43" font-family="Arial" font-size="14.00">Smooth</text>
+<text text-anchor="middle" x="136.5" y="-385.43" font-family="Arial" font-size="14.00">[_] / on_to_smooth_on_action</text>
 </g>
 <!-- Flash -->
-<g id="node11" class="node">
+<g id="node10" class="node">
 <title>Flash</title>
-<polygon fill="none" stroke="black" points="226,-527.63 47,-527.63 47,-489.63 226,-489.63 226,-527.63"/>
-<text text-anchor="middle" x="136.5" y="-512.43" font-family="Arial" font-size="14.00">Flash</text>
-<text text-anchor="middle" x="136.5" y="-497.43" font-family="Arial" font-size="14.00">[_] / on_to_flash_on_action</text>
+<polygon fill="none" stroke="black" points="226,-471.63 47,-471.63 47,-433.63 226,-433.63 226,-471.63"/>
+<text text-anchor="middle" x="136.5" y="-456.43" font-family="Arial" font-size="14.00">Flash</text>
+<text text-anchor="middle" x="136.5" y="-441.43" font-family="Arial" font-size="14.00">[_] / on_to_flash_on_action</text>
 </g>
 <!-- TimerCheck -->
-<g id="node12" class="node">
+<g id="node11" class="node">
 <title>TimerCheck</title>
-<polygon fill="none" stroke="black" points="273,-583.63 0,-583.63 0,-545.63 273,-545.63 273,-583.63"/>
-<text text-anchor="middle" x="136.5" y="-568.43" font-family="Arial" font-size="14.00">TimerCheck</text>
-<text text-anchor="middle" x="136.5" y="-553.43" font-family="Arial" font-size="14.00">[on_timer_check_guard] / on_to_off_action</text>
+<polygon fill="none" stroke="black" points="273,-527.63 0,-527.63 0,-489.63 273,-489.63 273,-527.63"/>
+<text text-anchor="middle" x="136.5" y="-512.43" font-family="Arial" font-size="14.00">TimerCheck</text>
+<text text-anchor="middle" x="136.5" y="-497.43" font-family="Arial" font-size="14.00">[on_timer_check_guard] / on_to_off_action</text>
+</g>
+<!-- AutoOn -->
+<g id="node12" class="node">
+<title>AutoOn</title>
+<polygon fill="none" stroke="black" points="224.5,-583.63 48.5,-583.63 48.5,-545.63 224.5,-545.63 224.5,-583.63"/>
+<text text-anchor="middle" x="136.5" y="-568.43" font-family="Arial" font-size="14.00">AutoOn</text>
+<text text-anchor="middle" x="136.5" y="-553.43" font-family="Arial" font-size="14.00">[_] / on_to_auto_on_action</text>
 </g>
 <!-- ManualOff -->
 <g id="node13" class="node">

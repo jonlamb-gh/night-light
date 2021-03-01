@@ -1,4 +1,5 @@
 use crate::Button;
+use colorous::RAINBOW as PALETTE;
 use core::{cmp::Ordering, fmt, iter};
 use embedded_hal::spi::FullDuplex;
 use log::error;
@@ -114,12 +115,12 @@ impl RandomColorGen {
     }
 
     pub fn rand_rgb(&mut self) -> RGBW8 {
-        RGBW8::new_alpha(
-            self.0.rand_range(0..256) as u8,
-            self.0.rand_range(0..256) as u8,
-            self.0.rand_range(0..256) as u8,
-            White(0),
-        )
+        let exclusive_max = 360;
+        let sample = self.0.rand_range(0..exclusive_max);
+        let (r, g, b) = PALETTE
+            .eval_rational(sample as _, exclusive_max as _)
+            .into_tuple();
+        RGBW8::new_alpha(r, g, b, White(0))
     }
 
     pub fn rand_color(&mut self) -> BasicColor {

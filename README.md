@@ -25,7 +25,7 @@ NOTE: the two jumpers on `boot0` and `boot1` select RAM or FLASH.
 * Both tied to `0` == Flash
 * Both tied to `1` == System memory
 
-Make sure to tie both jumpers to `0`.
+Tie both jumpers to `0`.
 
 **WARNING**: make sure the USB micro cable is disconnected while powering
 the board with the st-link programmer!
@@ -48,7 +48,6 @@ Build and flash the firmware:
 
 ```bash
 # Release build then upload
-# Jumpers should both be tied to 0
 ./flash-firmware
 ```
 
@@ -89,7 +88,9 @@ cargo run
   - Datasheet: [STM32F303xC](https://www.st.com/resource/en/datasheet/stm32f303cb.pdf)
   - Pinout: [link](https://robotdyn.com/pub/media/GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem/DOCS/PINOUT==GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem.jpg)
   - Schematic: [link](https://robotdyn.com/pub/media/GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem/DOCS/Schematic==GR-00000345==STM32F303CCT6-256KB-STM32MiniSystem.pdf)
-* TODO
+* [PowerBoost 500 Basic](https://www.adafruit.com/product/1903)
+* [Medium Vibration Sensor Switch](https://www.adafruit.com/product/2384)
+* [NeoPixel Ring - 12 x 5050 RGBW LEDs (warm white)](https://www.adafruit.com/product/2851)
 
 ### Pins
 

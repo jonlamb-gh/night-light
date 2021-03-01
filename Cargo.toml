@@ -35,3 +35,7 @@ features = ["graphviz"]
 [dependencies.log]
 version = "0.4"
 default-features = false
+
+[dependencies.colorous]
+version = "1.0"
+default-features = false

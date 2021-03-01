@@ -17,6 +17,7 @@ impl Instant {
     pub const ONE_MINUTE: Self = Instant(1000 * 60);
     pub const TEN_MINUTES: Self = Instant(1000 * 60 * 10);
     pub const ONE_HOUR: Self = Instant(1000 * 60 * 60);
+    pub const TEN_HOURS: Self = Instant(1000 * 60 * 60 * 10);
 
     pub const fn from_millis(ms: u32) -> Self {
         Instant(ms)
@@ -63,7 +64,7 @@ unsafe impl Send for SystemClock {}
 unsafe impl Sync for SystemClock {}
 
 impl SystemClock {
-    pub const NEAR_WRAP_AROUND_VALUE: Instant = Instant(core::u32::MAX - Instant::ONE_HOUR.0);
+    pub const NEAR_WRAP_AROUND_VALUE: Instant = Instant(core::u32::MAX - Instant::TEN_HOURS.0);
 
     pub const fn new() -> Self {
         SystemClock(AtomicU32::new(0))
